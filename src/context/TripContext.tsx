@@ -1,36 +1,76 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import { Member, Expense } from "@/lib/types";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { Member, Expense, Trip } from "@/lib/types";
 
 interface TripContextType {
-  members: Member[];
-  expenses: Expense[];
-  addMember: (m: Member) => void;
-  removeMember: (id: string) => void;
-  addExpense: (e: Expense) => void;
-  removeExpense: (id: string) => void;
+  trips: Trip[];
+  createTrip: (name: string) => Trip;
+  deleteTrip: (id: string) => void;
+  getTrip: (id: string) => Trip | undefined;
+  addMember: (tripId: string, member: Member) => void;
+  removeMember: (tripId: string, memberId: string) => void;
+  addExpense: (tripId: string, expense: Expense) => void;
+  removeExpense: (tripId: string, expenseId: string) => void;
 }
 
 const TripContext = createContext<TripContextType | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
 
-  const addMember = (m: Member) => setMembers((prev) => [...prev, m]);
-  const removeMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    setExpenses((prev) =>
-      prev
-        .filter((e) => e.paidBy !== id)
-        .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== id) }))
-        .filter((e) => e.splitAmong.length > 0)
-    );
+  const createTrip = useCallback((name: string) => {
+    const trip: Trip = {
+      id: crypto.randomUUID(),
+      name,
+      members: [],
+      expenses: [],
+      createdAt: new Date().toISOString(),
+    };
+    setTrips((prev) => [trip, ...prev]);
+    return trip;
+  }, []);
+
+  const deleteTrip = useCallback((id: string) => {
+    setTrips((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const getTrip = useCallback((id: string) => {
+    return trips.find((t) => t.id === id);
+  }, [trips]);
+
+  const updateTrip = (tripId: string, updater: (t: Trip) => Trip) => {
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? updater(t) : t)));
   };
-  const addExpense = (e: Expense) => setExpenses((prev) => [e, ...prev]);
-  const removeExpense = (id: string) => setExpenses((prev) => prev.filter((e) => e.id !== id));
+
+  const addMember = useCallback((tripId: string, member: Member) => {
+    updateTrip(tripId, (t) => ({ ...t, members: [...t.members, member] }));
+  }, []);
+
+  const removeMember = useCallback((tripId: string, memberId: string) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      members: t.members.filter((m) => m.id !== memberId),
+      expenses: t.expenses
+        .filter((e) => e.paidBy !== memberId)
+        .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== memberId) }))
+        .filter((e) => e.splitAmong.length > 0),
+    }));
+  }, []);
+
+  const addExpense = useCallback((tripId: string, expense: Expense) => {
+    updateTrip(tripId, (t) => ({ ...t, expenses: [expense, ...t.expenses] }));
+  }, []);
+
+  const removeExpense = useCallback((tripId: string, expenseId: string) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      expenses: t.expenses.filter((e) => e.id !== expenseId),
+    }));
+  }, []);
 
   return (
-    <TripContext.Provider value={{ members, expenses, addMember, removeMember, addExpense, removeExpense }}>
+    <TripContext.Provider
+      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, removeExpense }}
+    >
       {children}
     </TripContext.Provider>
   );

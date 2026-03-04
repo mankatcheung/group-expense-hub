@@ -9,14 +9,22 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
-  paidBy: string; // member id
-  splitAmong: string[]; // member ids
+  paidBy: string;
+  splitAmong: string[];
   date: string;
 }
 
 export interface Balance {
-  from: string; // member id
-  to: string; // member id
+  from: string;
+  to: string;
   amount: number;
   currency: string;
+}
+
+export interface Trip {
+  id: string;
+  name: string;
+  members: Member[];
+  expenses: Expense[];
+  createdAt: string;
 }

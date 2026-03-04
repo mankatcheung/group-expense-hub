@@ -1,15 +1,23 @@
+import { useState } from "react";
 import { useTrip } from "@/context/TripContext";
-import { calculateBalances } from "@/lib/balances";
-import ExpenseList from "@/components/ExpenseList";
-import BalanceSummary from "@/components/BalanceSummary";
-import { Plane, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Plane, Plus, Trash2, ChevronRight, MapPin } from "lucide-react";
+import { getCurrencySymbol } from "@/lib/currencies";
 
 const Index = () => {
-  const { members, expenses, removeExpense } = useTrip();
+  const { trips, createTrip, deleteTrip } = useTrip();
   const navigate = useNavigate();
-  const balances = calculateBalances(expenses);
+  const [tripName, setTripName] = useState("");
+
+  const handleCreate = () => {
+    const name = tripName.trim();
+    if (!name) return;
+    const trip = createTrip(name);
+    setTripName("");
+    navigate(`/trip/${trip.id}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,21 +35,75 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Content */}
-        <div className="space-y-6">
-          <Button onClick={() => navigate("/add")} className="w-full gap-2">
-            <Plus className="h-4 w-4" />
-            Add Expense
-          </Button>
-
-          {expenses.length > 0 && (
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <BalanceSummary balances={balances} members={members} />
-            </div>
-          )}
-
-          <ExpenseList expenses={expenses} members={members} onRemove={removeExpense} />
+        {/* Create Trip */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+          <h2 className="text-lg font-display font-semibold text-foreground mb-3">New Trip</h2>
+          <div className="flex gap-2">
+            <Input
+              placeholder="e.g. Bali 2026, Road Trip..."
+              value={tripName}
+              onChange={(e) => setTripName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              className="flex-1"
+            />
+            <Button onClick={handleCreate} className="gap-2 shrink-0">
+              <Plus className="h-4 w-4" />
+              Create
+            </Button>
+          </div>
         </div>
+
+        {/* Trip List */}
+        {trips.length > 0 ? (
+          <div className="space-y-3">
+            <h2 className="text-lg font-display font-semibold text-foreground">Your Trips</h2>
+            {trips.map((trip) => {
+              const totalByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
+                acc[e.currency] = (acc[e.currency] || 0) + e.amount;
+                return acc;
+              }, {});
+              const totals = Object.entries(totalByCurrency);
+
+              return (
+                <div
+                  key={trip.id}
+                  className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/50"
+                  onClick={() => navigate(`/trip/${trip.id}`)}
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{trip.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} · {trip.expenses.length} expense{trip.expenses.length !== 1 ? "s" : ""}
+                      {totals.length > 0 && (
+                        <span>
+                          {" "}· {totals.map(([cur, amt]) => `${getCurrencySymbol(cur)}${amt.toFixed(0)}`).join(", ")}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      deleteTrip(trip.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <MapPin className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground text-sm">Create your first trip to get started</p>
+          </div>
+        )}
       </div>
     </div>
   );
