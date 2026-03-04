@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TripProvider } from "@/context/TripContext";
 import Index from "./pages/Index";
+import TripDetail from "./pages/TripDetail";
 import AddExpensePage from "./pages/AddExpensePage";
 import NotFound from "./pages/NotFound";
 
@@ -19,7 +20,8 @@ const App = () => (
         <TripProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/add" element={<AddExpensePage />} />
+            <Route path="/trip/:tripId" element={<TripDetail />} />
+            <Route path="/trip/:tripId/add" element={<AddExpensePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TripProvider>
