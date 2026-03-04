@@ -1,6 +1,9 @@
+import { useMemo, useState } from "react";
 import { Expense, Member } from "@/lib/types";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Props {
   expenses: Expense[];
@@ -11,51 +14,79 @@ interface Props {
 export default function ExpenseList({ expenses, members, onRemove }: Props) {
   const getMember = (id: string) => members.find((m) => m.id === id);
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, Expense[]>();
+    for (const e of expenses) {
+      const key = format(parseISO(e.date), "yyyy-MM-dd");
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(e);
+    }
+    // Sort dates descending
+    return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [expenses]);
+
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
+
   if (expenses.length === 0) return null;
+
+  const currentTab = activeTab && grouped.some(([d]) => d === activeTab) ? activeTab : grouped[0]?.[0];
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-display font-semibold text-foreground">
         Expenses ({expenses.length})
       </h2>
-      <div className="space-y-2">
-        {expenses.map((e) => {
-          const payer = getMember(e.paidBy);
-          return (
-            <div
-              key={e.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 group transition-colors hover:bg-muted/50"
-            >
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold"
-                style={{
-                  backgroundColor: (payer?.color ?? "hsl(var(--primary))") + "18",
-                  color: payer?.color ?? "hsl(var(--primary))",
-                }}
-              >
-                {getCurrencySymbol(e.currency)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{e.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  <span style={{ color: payer?.color }}>{payer?.name}</span> paid · split {e.splitAmong.length} way{e.splitAmong.length > 1 ? "s" : ""}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="font-semibold text-sm">
-                  {getCurrencySymbol(e.currency)}{e.amount.toFixed(2)}
-                </p>
-              </div>
-              <button
-                onClick={() => onRemove(e.id)}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+
+      <Tabs value={currentTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full flex-wrap h-auto gap-1">
+          {grouped.map(([date, items]) => (
+            <TabsTrigger key={date} value={date} className="text-xs">
+              {format(parseISO(date), "MMM d")} ({items.length})
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {grouped.map(([date, items]) => (
+          <TabsContent key={date} value={date} className="space-y-2">
+            {items.map((e) => {
+              const payer = getMember(e.paidBy);
+              return (
+                <div
+                  key={e.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 group transition-colors hover:bg-muted/50"
+                >
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold"
+                    style={{
+                      backgroundColor: (payer?.color ?? "hsl(var(--primary))") + "18",
+                      color: payer?.color ?? "hsl(var(--primary))",
+                    }}
+                  >
+                    {getCurrencySymbol(e.currency)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{e.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      <span style={{ color: payer?.color }}>{payer?.name}</span> paid · split {e.splitAmong.length} way{e.splitAmong.length > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm">
+                      {getCurrencySymbol(e.currency)}{e.amount.toFixed(2)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onRemove(e.id)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }

@@ -1,29 +1,14 @@
-import { useState } from "react";
-import { Member, Expense } from "@/lib/types";
+import { useTrip } from "@/context/TripContext";
 import { calculateBalances } from "@/lib/balances";
-import MemberManager from "@/components/MemberManager";
-import AddExpense from "@/components/AddExpense";
 import ExpenseList from "@/components/ExpenseList";
 import BalanceSummary from "@/components/BalanceSummary";
-import { Plane } from "lucide-react";
+import { Plane, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-
-  const addMember = (m: Member) => setMembers((prev) => [...prev, m]);
-  const removeMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-    setExpenses((prev) =>
-      prev
-        .filter((e) => e.paidBy !== id)
-        .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== id) }))
-        .filter((e) => e.splitAmong.length > 0)
-    );
-  };
-  const addExpense = (e: Expense) => setExpenses((prev) => [e, ...prev]);
-  const removeExpense = (id: string) => setExpenses((prev) => prev.filter((e) => e.id !== id));
-
+  const { members, expenses, removeExpense } = useTrip();
+  const navigate = useNavigate();
   const balances = calculateBalances(expenses);
 
   return (
@@ -44,13 +29,10 @@ const Index = () => {
 
         {/* Content */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <MemberManager members={members} onAdd={addMember} onRemove={removeMember} />
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <AddExpense members={members} onAdd={addExpense} />
-          </div>
+          <Button onClick={() => navigate("/add")} className="w-full gap-2">
+            <Plus className="h-4 w-4" />
+            Add Expense
+          </Button>
 
           {expenses.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
