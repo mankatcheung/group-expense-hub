@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useTrip } from "@/context/TripContext";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plane, Plus, Trash2, ChevronRight, MapPin } from "lucide-react";
+import { Plane, Plus, Trash2, ChevronRight, MapPin, LogOut } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/currencies";
 
 const Index = () => {
   const { trips, createTrip, deleteTrip } = useTrip();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [tripName, setTripName] = useState("");
 
@@ -19,8 +21,24 @@ const Index = () => {
     navigate(`/trip/${trip.id}`);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Navigation */}
+      <div className="border-b border-border bg-card">
+        <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
+          <span className="font-semibold text-sm">Hello, {user?.name}</span>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         {/* Header */}
         <div className="mb-8 text-center">
