@@ -6,6 +6,7 @@ let currentToken: string | null = null;
 
 const headers = () => {
   const h: Record<string, string> = { "Content-Type": "application/json" };
+  const currentToken = localStorage.getItem("token");
   if (currentToken) {
     h["Authorization"] = `Bearer ${currentToken}`;
   }

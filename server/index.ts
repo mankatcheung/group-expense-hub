@@ -292,6 +292,43 @@ app.post(
   },
 );
 
+// UPDATE expense
+app.put(
+  "/api/trips/:id/expenses/:expenseId",
+  authenticate,
+  async (req: any, res: any) => {
+    try {
+      const { expenseId } = req.params;
+      const { description, amount, currency, paidBy, splitAmong, date } =
+        req.body;
+
+      const expense = await prisma.expense.update({
+        where: {
+          id: expenseId,
+        },
+        data: {
+          description,
+          amount,
+          currency,
+          date: date ? new Date(date) : undefined,
+          tripId: req.params.id,
+          paidById: paidBy,
+          splits: {
+            deleteMany: {},
+            create: splitAmong.map((memberId: string) => ({
+              memberId,
+            })),
+          },
+        },
+      });
+
+      res.json({ success: true, id: expense.id });
+    } catch (error) {
+      console.error("Error adding expense:", error);
+      res.status(500).json({ error: "Failed to add expense" });
+    }
+  },
+);
 // REMOVE expense
 app.delete(
   "/api/trips/:tripId/expenses/:expenseId",
