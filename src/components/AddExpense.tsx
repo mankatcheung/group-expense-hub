@@ -44,7 +44,7 @@ export default function AddExpense({ members, onAdd }: Props) {
       currency,
       paidBy,
       splitAmong,
-      date: new Date().toISOString(),
+      date: date.toISOString(),
     });
     setDescription("");
     setAmount("");
