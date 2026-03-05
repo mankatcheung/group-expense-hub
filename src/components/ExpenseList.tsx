@@ -1,18 +1,21 @@
 import { useMemo, useState } from "react";
 import { Expense, Member } from "@/lib/types";
 import { getCurrencySymbol } from "@/lib/currencies";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import EditExpenseDialog from "@/components/EditExpenseDialog";
 
 interface Props {
   expenses: Expense[];
   members: Member[];
   onRemove: (id: string) => void;
+  onUpdate: (expense: Expense) => void;
 }
 
-export default function ExpenseList({ expenses, members, onRemove }: Props) {
+export default function ExpenseList({ expenses, members, onRemove, onUpdate }: Props) {
   const getMember = (id: string) => members.find((m) => m.id === id);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Expense[]>();
@@ -21,7 +24,6 @@ export default function ExpenseList({ expenses, members, onRemove }: Props) {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     }
-    // Sort dates descending
     return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]));
   }, [expenses]);
 
@@ -76,6 +78,12 @@ export default function ExpenseList({ expenses, members, onRemove }: Props) {
                     </p>
                   </div>
                   <button
+                    onClick={() => setEditingExpense(e)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1 rounded"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => onRemove(e.id)}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded"
                   >
@@ -87,6 +95,16 @@ export default function ExpenseList({ expenses, members, onRemove }: Props) {
           </TabsContent>
         ))}
       </Tabs>
+
+      {editingExpense && (
+        <EditExpenseDialog
+          expense={editingExpense}
+          members={members}
+          open={!!editingExpense}
+          onOpenChange={(open) => !open && setEditingExpense(null)}
+          onSave={onUpdate}
+        />
+      )}
     </div>
   );
 }
