@@ -96,6 +96,21 @@ export default function AddExpense({ members, onAdd }: Props) {
       </div>
 
       <div>
+        <Label className="text-sm text-muted-foreground mb-2 block">Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(date, "PPP")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <div>
         <Label className="text-sm text-muted-foreground mb-2 block">Paid by</Label>
         <Select value={paidBy} onValueChange={setPaidBy}>
           <SelectTrigger>
