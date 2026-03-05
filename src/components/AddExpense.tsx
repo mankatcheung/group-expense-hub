@@ -23,6 +23,7 @@ export default function AddExpense({ members, onAdd }: Props) {
   const [currency, setCurrency] = useState("USD");
   const [paidBy, setPaidBy] = useState("");
   const [splitAmong, setSplitAmong] = useState<string[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
 
   const toggleSplit = (id: string) => {
     setSplitAmong((prev) =>
