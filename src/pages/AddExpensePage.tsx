@@ -1,13 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useTrip } from "@/context/TripContext";
-import MemberManager from "@/components/MemberManager";
 import AddExpense from "@/components/AddExpense";
 import { Plane, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const AddExpensePage = () => {
   const { tripId } = useParams<{ tripId: string }>();
-  const { getTrip, addMember, removeMember, addExpense } = useTrip();
+  const { getTrip, addExpense } = useTrip();
   const navigate = useNavigate();
 
   const trip = getTrip(tripId!);
@@ -46,14 +45,6 @@ const AddExpensePage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <MemberManager
-              members={trip.members}
-              onAdd={(m) => addMember(trip.id, m)}
-              onRemove={(id) => removeMember(trip.id, id)}
-            />
-          </div>
-
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <AddExpense members={trip.members} onAdd={(e) => addExpense(trip.id, e)} />
           </div>
