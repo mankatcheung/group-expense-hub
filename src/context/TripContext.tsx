@@ -10,6 +10,7 @@ interface TripContextType {
   addMember: (tripId: string, member: Member) => void;
   removeMember: (tripId: string, memberId: string) => void;
   addExpense: (tripId: string, expense: Expense) => void;
+  updateExpense: (tripId: string, expense: Expense) => void;
   removeExpense: (tripId: string, expenseId: string) => void;
 }
 
