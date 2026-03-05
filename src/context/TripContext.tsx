@@ -112,7 +112,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   return (
     <TripContext.Provider
-      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, removeExpense }}
+      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense }}
     >
       {children}
     </TripContext.Provider>

@@ -104,6 +104,14 @@ export const api = {
     if (!res.ok) throw new Error("Failed to add expense");
   },
 
+  updateExpense: async (tripId: string, expense: Expense): Promise<void> => {
+    const res = await fetch(
+      `${API_URL}/trips/${tripId}/expenses/${expense.id}`,
+      { method: "PUT", headers: headers(), body: JSON.stringify(expense) },
+    );
+    if (!res.ok) throw new Error("Failed to update expense");
+  },
+
   removeExpense: async (tripId: string, expenseId: string): Promise<void> => {
     const res = await fetch(
       `${API_URL}/trips/${tripId}/expenses/${expenseId}`,
