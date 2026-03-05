@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const AddExpensePage = () => {
   const { tripId } = useParams<{ tripId: string }>();
-  const { getTrip, addMember, removeMember, addExpense } = useTrip();
+  const { getTrip, addExpense } = useTrip();
   const navigate = useNavigate();
 
   const trip = getTrip(tripId!);
