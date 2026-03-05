@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plane } from "lucide-react";
-import { api } from "@/services/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,8 +16,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      const data = await api.login({ email, password });
-      login(data.token, data.user);
+      await login(email, password);
       navigate("/");
     } catch (err: any) {
       setError(err.message || "Failed to login");
@@ -66,6 +64,15 @@ export default function LoginPage() {
             Sign In
           </Button>
         </form>
+
+        <div className="text-center text-sm">
+          <Link
+            to="/forgot-password"
+            className="text-muted-foreground hover:text-primary"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         <div className="text-center text-sm">
           <p className="text-muted-foreground">

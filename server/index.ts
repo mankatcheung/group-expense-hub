@@ -1,89 +1,42 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import prisma from "../prisma/client";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { auth } from "./auth";
+import { toNodeHandler } from "better-auth/node";
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4040;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
+
+app.use("/api/auth", toNodeHandler(auth));
+
 app.use(express.json());
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret_fallback_123";
+const authenticate = async (req: any, res: any, next: any) => {
+  const getSession = await auth.api.getSession({
+    headers: req.headers,
+  });
 
-const authenticate = (req: any, res: any, next: any) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!getSession) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const token = authHeader.split(" ")[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as { id: string };
-    req.user = payload;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
+
+  req.user = getSession.user;
+  next();
 };
 
-// --- ROUTES ---
-
-// Auth Register
-app.post("/api/auth/register", async (req: any, res: any) => {
-  try {
-    const { email, password, name } = req.body;
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(400).json({ error: "User already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
-    });
-
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// Auth Login
-app.post("/api/auth/login", async (req: any, res: any) => {
-  try {
-    const { email, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
-
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ error: "Invalid credentials" });
-
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({
-      token,
-      user: { id: user.id, email: user.email, name: user.name },
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// Auth Me
 app.get("/api/auth/me", authenticate, async (req: any, res: any) => {
-  try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ user: { id: user.id, email: user.email, name: user.name } });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
+  res.json({ user: req.user });
 });
 
-// GET all trips
 app.get("/api/trips", authenticate, async (req: any, res: any) => {
   try {
     const trips = await prisma.trip.findMany({
@@ -103,7 +56,6 @@ app.get("/api/trips", authenticate, async (req: any, res: any) => {
       },
     });
 
-    // Format for frontend
     const formattedTrips = trips.map((trip) => ({
       id: trip.id,
       name: trip.name,
@@ -131,7 +83,6 @@ app.get("/api/trips", authenticate, async (req: any, res: any) => {
   }
 });
 
-// GET single trip
 app.get("/api/trips/:id", authenticate, async (req: any, res: any) => {
   try {
     const trip = await prisma.trip.findUnique({
@@ -177,14 +128,13 @@ app.get("/api/trips/:id", authenticate, async (req: any, res: any) => {
   }
 });
 
-// CREATE trip
 app.post("/api/trips", authenticate, async (req: any, res: any) => {
   try {
     const { id, name, createdAt } = req.body;
 
     const trip = await prisma.trip.create({
       data: {
-        id, // We allow setting ID to keep frontend logic same
+        id,
         name,
         createdAt: createdAt ? new Date(createdAt) : undefined,
         userId: req.user.id,
@@ -204,7 +154,6 @@ app.post("/api/trips", authenticate, async (req: any, res: any) => {
   }
 });
 
-// DELETE trip
 app.delete("/api/trips/:id", authenticate, async (req: any, res: any) => {
   try {
     await prisma.trip.delete({
@@ -217,7 +166,6 @@ app.delete("/api/trips/:id", authenticate, async (req: any, res: any) => {
   }
 });
 
-// ADD member
 app.post("/api/trips/:id/members", authenticate, async (req: any, res: any) => {
   try {
     const { id, name, color } = req.body;
@@ -238,15 +186,11 @@ app.post("/api/trips/:id/members", authenticate, async (req: any, res: any) => {
   }
 });
 
-// REMOVE member
 app.delete(
   "/api/trips/:tripId/members/:memberId",
   authenticate,
   async (req: any, res: any) => {
     try {
-      // Member deletion is cascading to expenses/splits they own/part of
-      // However, Prisma SQLite adapter doesn't perfectly emulate all CASCADE constraints seamlessly sometimes,
-      // but schema specifies onDelete: Cascade. Let's rely on it.
       await prisma.member.delete({
         where: { id: req.params.memberId },
       });
@@ -258,7 +202,6 @@ app.delete(
   },
 );
 
-// ADD expense
 app.post(
   "/api/trips/:id/expenses",
   authenticate,
@@ -292,7 +235,6 @@ app.post(
   },
 );
 
-// UPDATE expense
 app.put(
   "/api/trips/:id/expenses/:expenseId",
   authenticate,
@@ -329,7 +271,7 @@ app.put(
     }
   },
 );
-// REMOVE expense
+
 app.delete(
   "/api/trips/:tripId/expenses/:expenseId",
   authenticate,
@@ -346,7 +288,6 @@ app.delete(
   },
 );
 
-// Start server
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
