@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Receipt } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Receipt, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Props {
   members: Member[];
@@ -19,6 +23,7 @@ export default function AddExpense({ members, onAdd }: Props) {
   const [currency, setCurrency] = useState("USD");
   const [paidBy, setPaidBy] = useState("");
   const [splitAmong, setSplitAmong] = useState<string[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
 
   const toggleSplit = (id: string) => {
     setSplitAmong((prev) =>
@@ -39,11 +44,12 @@ export default function AddExpense({ members, onAdd }: Props) {
       currency,
       paidBy,
       splitAmong,
-      date: new Date().toISOString(),
+      date: date.toISOString(),
     });
     setDescription("");
     setAmount("");
     setSplitAmong([]);
+    setDate(new Date());
   };
 
   if (members.length < 2) {
@@ -87,6 +93,21 @@ export default function AddExpense({ members, onAdd }: Props) {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <Label className="text-sm text-muted-foreground mb-2 block">Date</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(date, "PPP")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div>

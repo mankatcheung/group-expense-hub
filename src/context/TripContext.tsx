@@ -10,6 +10,7 @@ interface TripContextType {
   addMember: (tripId: string, member: Member) => void;
   removeMember: (tripId: string, memberId: string) => void;
   addExpense: (tripId: string, expense: Expense) => void;
+  updateExpense: (tripId: string, expense: Expense) => void;
   removeExpense: (tripId: string, expenseId: string) => void;
 }
 
@@ -90,6 +91,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     api.addExpense(tripId, expense).catch(console.error);
   }, []);
 
+  const updateExpense = useCallback((tripId: string, expense: Expense) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)),
+    }));
+    api.updateExpense(tripId, expense).catch(console.error);
+  }, []);
+
   const removeExpense = useCallback((tripId: string, expenseId: string) => {
     // Optimistic update
     updateTrip(tripId, (t) => ({
@@ -103,7 +112,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   return (
     <TripContext.Provider
-      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, removeExpense }}
+      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense }}
     >
       {children}
     </TripContext.Provider>
