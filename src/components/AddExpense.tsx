@@ -49,6 +49,7 @@ export default function AddExpense({ members, onAdd }: Props) {
     setDescription("");
     setAmount("");
     setSplitAmong([]);
+    setDate(new Date());
   };
 
   if (members.length < 2) {
