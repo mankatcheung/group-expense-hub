@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useTrip } from "@/context/TripContext";
 import AddExpense from "@/components/AddExpense";
-import AddExpense from "@/components/AddExpense";
 import { Plane, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
