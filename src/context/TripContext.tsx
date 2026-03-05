@@ -91,6 +91,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     api.addExpense(tripId, expense).catch(console.error);
   }, []);
 
+  const updateExpense = useCallback((tripId: string, expense: Expense) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)),
+    }));
+    api.updateExpense(tripId, expense).catch(console.error);
+  }, []);
+
   const removeExpense = useCallback((tripId: string, expenseId: string) => {
     // Optimistic update
     updateTrip(tripId, (t) => ({
