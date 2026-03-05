@@ -47,14 +47,6 @@ const AddExpensePage = () => {
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <MemberManager
-              members={trip.members}
-              onAdd={(m) => addMember(trip.id, m)}
-              onRemove={(id) => removeMember(trip.id, id)}
-            />
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <AddExpense members={trip.members} onAdd={(e) => addExpense(trip.id, e)} />
           </div>
         </div>

@@ -3,12 +3,14 @@ import { useTrip } from "@/context/TripContext";
 import { calculateBalances } from "@/lib/balances";
 import ExpenseList from "@/components/ExpenseList";
 import BalanceSummary from "@/components/BalanceSummary";
-import { Plane, Plus, ArrowLeft, Users } from "lucide-react";
+import MemberManager from "@/components/MemberManager";
+import { Plane, Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const TripDetail = () => {
   const { tripId } = useParams<{ tripId: string }>();
-  const { getTrip, removeExpense, updateExpense } = useTrip();
+  const { getTrip, removeExpense, updateExpense, addMember, removeMember } = useTrip();
   const navigate = useNavigate();
 
   const trip = getTrip(tripId!);
@@ -49,48 +51,47 @@ const TripDetail = () => {
           </p>
         </div>
 
-        {/* Content */}
-        <div className="space-y-6">
-          <Button onClick={() => navigate(`/trip/${trip.id}/add`)} className="w-full gap-2">
-            <Plus className="h-4 w-4" />
-            Add Expense
-          </Button>
+        {/* Tabs */}
+        <Tabs defaultValue="summary" className="space-y-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="summary" className="flex-1">Summary</TabsTrigger>
+            <TabsTrigger value="members" className="flex-1">Members</TabsTrigger>
+            <TabsTrigger value="expenses" className="flex-1">Expenses</TabsTrigger>
+          </TabsList>
 
-          {/* Summary Section */}
-          {trip.expenses.length > 0 && (
+          <TabsContent value="summary">
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <BalanceSummary balances={balances} members={trip.members} />
+              {trip.expenses.length > 0 ? (
+                <BalanceSummary balances={balances} members={trip.members} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No expenses yet. Add members and expenses to see the summary.</p>
+              )}
             </div>
-          )}
+          </TabsContent>
 
-          {/* Expense List Section */}
-          <ExpenseList
-            expenses={trip.expenses}
-            members={trip.members}
-            onRemove={(expenseId) => removeExpense(trip.id, expenseId)}
-            onUpdate={(expense) => updateExpense(trip.id, expense)}
-          />
-
-          {/* Members Section */}
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-display font-semibold text-foreground">Members ({trip.members.length})</h2>
+          <TabsContent value="members">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <MemberManager
+                members={trip.members}
+                onAdd={(m) => addMember(trip.id, m)}
+                onRemove={(id) => removeMember(trip.id, id)}
+              />
             </div>
-            {trip.members.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No members yet. Add members from the expense page.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {trip.members.map((m) => (
-                  <div key={m.id} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 bg-muted/30">
-                    <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-                    <span className="text-sm font-medium text-foreground">{m.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="expenses" className="space-y-4">
+            <Button onClick={() => navigate(`/trip/${trip.id}/add`)} className="w-full gap-2">
+              <Plus className="h-4 w-4" />
+              Add Expense
+            </Button>
+            <ExpenseList
+              expenses={trip.expenses}
+              members={trip.members}
+              onRemove={(expenseId) => removeExpense(trip.id, expenseId)}
+              onUpdate={(expense) => updateExpense(trip.id, expense)}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
