@@ -51,11 +51,18 @@ export const api = {
     return res.json();
   },
 
-  removeMember: async (tripId: string, memberId: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/trips/${tripId}/members/${memberId}`, fetchOptions({
+  removeMember: async (tripId: string, memberId: string, force: boolean = false): Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }> => {
+    const res = await fetch(`${API_URL}/trips/${tripId}/members/${memberId}?force=${force}`, fetchOptions({
       method: "DELETE",
     }));
-    if (!res.ok) throw new Error("Failed to remove member");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        return { error: data.error, expenseCount: data.expenseCount, memberName: data.memberName };
+      }
+      throw new Error(data.error || "Failed to remove member");
+    }
+    return { success: true };
   },
 
   // Expenses

@@ -2,27 +2,46 @@ import { useState } from "react";
 import { Member } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { UserPlus, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { UserPlus, X, AlertTriangle, Loader2 } from "lucide-react";
 
 const MEMBER_COLORS = [
-  "hsl(165 55% 38%)",
-  "hsl(35 80% 56%)",
-  "hsl(220 60% 52%)",
-  "hsl(340 65% 55%)",
-  "hsl(270 50% 55%)",
-  "hsl(15 75% 55%)",
-  "hsl(190 60% 42%)",
-  "hsl(95 45% 45%)",
+  "#22C55E",
+  "#F97316",
+  "#3B82F6",
+  "#EC4899",
+  "#8B5CF6",
+  "#EF4444",
+  "#14B8A6",
+  "#EAB308",
 ];
+
+interface MemberWithExpenses extends Member {
+  hasExpenses: boolean;
+  expenseCount: number;
+}
 
 interface Props {
   members: Member[];
+  tripId: string;
   onAdd: (member: Member) => void;
-  onRemove: (id: string) => void;
+  onRemove: (id: string, force?: boolean) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
 }
 
 export default function MemberManager({ members, onAdd, onRemove }: Props) {
   const [name, setName] = useState("");
+  const [memberToRemove, setMemberToRemove] = useState<MemberWithExpenses | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleAdd = () => {
     const trimmed = name.trim();
@@ -33,6 +52,42 @@ export default function MemberManager({ members, onAdd, onRemove }: Props) {
       color: MEMBER_COLORS[members.length % MEMBER_COLORS.length],
     });
     setName("");
+  };
+
+  const handleRemoveClick = async (member: Member) => {
+    setIsChecking(true);
+    try {
+      const result = await onRemove(member.id, false);
+      if (result.error && result.expenseCount) {
+        setMemberToRemove({
+          ...member,
+          hasExpenses: true,
+          expenseCount: result.expenseCount,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to check member:", error);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!memberToRemove) return;
+    
+    setIsRemoving(true);
+    try {
+      await onRemove(memberToRemove.id, true);
+      setMemberToRemove(null);
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
+  const handleCancelRemove = () => {
+    setMemberToRemove(null);
   };
 
   return (
@@ -63,10 +118,15 @@ export default function MemberManager({ members, onAdd, onRemove }: Props) {
             />
             {m.name}
             <button
-              onClick={() => onRemove(m.id)}
-              className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
+              onClick={() => handleRemoveClick(m)}
+              disabled={isChecking}
+              className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors disabled:opacity-50"
             >
-              <X className="h-3 w-3" />
+              {isChecking ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <X className="h-3 w-3" />
+              )}
             </button>
           </span>
         ))}
@@ -74,6 +134,37 @@ export default function MemberManager({ members, onAdd, onRemove }: Props) {
           <p className="text-sm text-muted-foreground">Add members to start splitting bills</p>
         )}
       </div>
+
+      <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemove()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Remove {memberToRemove?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToRemove?.hasExpenses ? (
+                <span>
+                  This member is involved in <strong>{memberToRemove.expenseCount}</strong> expense(s). 
+                  Removing them will also delete these expenses. This action cannot be undone.
+                </span>
+              ) : (
+                <span>Are you sure you want to remove this member from the trip?</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRemove}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemove}
+              disabled={isRemoving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isRemoving ? "Removing..." : "Remove Member"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

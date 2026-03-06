@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useTrip } from "@/context/TripContext";
-import { useAuth } from "@/context/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plane, Plus, Trash2, ChevronRight, MapPin, LogOut, Mail, Check, Loader2 } from "lucide-react";
+import Header from "@/components/Header";
+import { Plus, Trash2, ChevronRight, MapPin, Mail, Check, Loader2, Plane } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { api } from "@/services/api";
 
@@ -25,13 +25,14 @@ interface Invitation {
 
 const Index = () => {
   const { trips, createTrip, deleteTrip, refreshTrips } = useTrip();
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tripName, setTripName] = useState("");
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+
+  const currentTab = searchParams.get("tab") || "trips";
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -43,6 +44,14 @@ const Index = () => {
   useEffect(() => {
     loadInvitations();
   }, []);
+
+  const handleTabChange = (value: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", value);
+      return newParams;
+    });
+  };
 
   const loadInvitations = async () => {
     setLoadingInvitations(true);
@@ -88,23 +97,9 @@ const Index = () => {
     navigate(`/trip/${trip.id}`);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navigation */}
-      <div className="border-b border-border bg-card">
-        <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <span className="font-semibold text-sm">Hello, {user?.name}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </div>
+      <Header />
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         {/* Header */}
@@ -139,7 +134,7 @@ const Index = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="trips" className="space-y-4">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="w-full">
             <TabsTrigger value="trips" className="flex-1">Trips</TabsTrigger>
             <TabsTrigger value="invitations" className="flex-1">

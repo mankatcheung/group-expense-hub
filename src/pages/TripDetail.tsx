@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTrip } from "@/context/TripContext";
 import { calculateBalances } from "@/lib/balances";
 import ExpenseList from "@/components/ExpenseList";
 import BalanceSummary from "@/components/BalanceSummary";
 import MemberManager from "@/components/MemberManager";
 import InviteMemberDialog from "@/components/InviteMemberDialog";
+import Header from "@/components/Header";
 import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TripDetail = () => {
   const { tripId } = useParams<{ tripId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     getTrip,
     removeExpense,
@@ -25,6 +27,16 @@ const TripDetail = () => {
   const navigate = useNavigate();
 
   const [inviteOpen, setInviteOpen] = useState(false);
+
+  const currentTab = searchParams.get("tab") || "summary";
+
+  const handleTabChange = (value: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", value);
+      return newParams;
+    });
+  };
 
   const trip = getTrip(tripId!);
 
@@ -49,6 +61,7 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header showBackButton onBack={() => navigate("/")} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-6">
           <Button
@@ -78,7 +91,7 @@ const TripDetail = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="summary" className="space-y-6">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="w-full">
             <TabsTrigger value="summary" className="flex-1">
               Summary
@@ -186,6 +199,7 @@ const TripDetail = () => {
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <MemberManager
                 members={trip.members}
+                tripId={trip.id}
                 onAdd={(m) => addMember(trip.id, m)}
                 onRemove={(id) => removeMember(trip.id, id)}
               />

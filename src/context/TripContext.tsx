@@ -8,7 +8,7 @@ interface TripContextType {
   deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
   addMember: (tripId: string, member: Member) => void;
-  removeMember: (tripId: string, memberId: string) => void;
+  removeMember: (tripId: string, memberId: string, force?: boolean) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
   addExpense: (tripId: string, expense: Expense) => void;
   updateExpense: (tripId: string, expense: Expense) => void;
   removeExpense: (tripId: string, expenseId: string) => void;
@@ -74,19 +74,25 @@ export function TripProvider({ children }: { children: ReactNode }) {
     api.addMember(tripId, member).catch(console.error);
   }, []);
 
-  const removeMember = useCallback((tripId: string, memberId: string) => {
-    // Optimistic update
-    updateTrip(tripId, (t) => ({
-      ...t,
-      members: t.members.filter((m) => m.id !== memberId),
-      expenses: t.expenses
-        .filter((e) => e.paidBy !== memberId)
-        .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== memberId) }))
-        .filter((e) => e.splitAmong.length > 0),
-    }));
+  const removeMember = useCallback(async (tripId: string, memberId: string, force: boolean = false) => {
+    const response = await api.removeMember(tripId, memberId, force);
+    
+    if (response.error && response.expenseCount) {
+      return response;
+    }
 
-    // API call
-    api.removeMember(tripId, memberId).catch(console.error);
+    if (response.success) {
+      updateTrip(tripId, (t) => ({
+        ...t,
+        members: t.members.filter((m) => m.id !== memberId),
+        expenses: t.expenses
+          .filter((e) => e.paidBy !== memberId)
+          .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== memberId) }))
+          .filter((e) => e.splitAmong.length > 0),
+      }));
+    }
+    
+    return response;
   }, []);
 
   const addExpense = useCallback((tripId: string, expense: Expense) => {

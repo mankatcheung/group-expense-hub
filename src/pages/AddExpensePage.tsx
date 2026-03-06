@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useTrip } from "@/context/TripContext";
 import AddExpense from "@/components/AddExpense";
+import Header from "@/components/Header";
 import { Plane, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,14 +25,8 @@ const AddExpensePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header showBackButton onBack={() => navigate(`/trip/${trip.id}`)} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
-        <div className="mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/trip/${trip.id}`)} className="gap-2 text-muted-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Back to {trip.name}
-          </Button>
-        </div>
-
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />

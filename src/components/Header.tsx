@@ -1,0 +1,43 @@
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut, Plane } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+interface HeaderProps {
+  showBackButton?: boolean;
+  onBack?: () => void;
+}
+
+export default function Header({ showBackButton, onBack }: HeaderProps) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  return (
+    <div className="border-b border-border bg-card">
+      <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {showBackButton && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
+              ←
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Plane className="h-4 w-4" />
+            </div>
+            <span className="font-semibold text-sm">Hello, {user?.name}</span>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
+  );
+}
