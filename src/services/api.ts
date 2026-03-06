@@ -41,7 +41,7 @@ export const api = {
     if (!res.ok) throw new Error("Failed to delete trip");
   },
 
-  // Members
+  // Members (local members for expense splitting)
   addMember: async (tripId: string, member: Member): Promise<Member> => {
     const res = await fetch(`${API_URL}/trips/${tripId}/members`, fetchOptions({
       method: "POST",
@@ -81,5 +81,48 @@ export const api = {
       fetchOptions({ method: "DELETE" }),
     );
     if (!res.ok) throw new Error("Failed to remove expense");
+  },
+
+  // Collaborators (users invited to the trip)
+  inviteMember: async (tripId: string, email: string): Promise<{ success: boolean; message?: string; user?: any; pending?: boolean; member?: { id: string; name: string; color: string } }> => {
+    const res = await fetch(`${API_URL}/trips/${tripId}/invite`, fetchOptions({
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }));
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Failed to invite member" }));
+      throw { response: error };
+    }
+    return res.json();
+  },
+
+  removeCollaborator: async (tripId: string, memberId: string): Promise<void> => {
+    const res = await fetch(`${API_URL}/trips/${tripId}/collaborators/${memberId}`, fetchOptions({
+      method: "DELETE",
+    }));
+    if (!res.ok) throw new Error("Failed to remove collaborator");
+  },
+
+  joinTrip: async (token: string): Promise<{ success: boolean; tripId: string }> => {
+    const res = await fetch(`${API_URL}/trips/join`, fetchOptions({
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }));
+    if (!res.ok) throw new Error("Failed to join trip");
+    return res.json();
+  },
+
+  getInvitations: async (): Promise<{ id: string; token: string; tripId: string; tripName: string; inviter: { id: string; name: string | null; email: string; image: string | null }; createdAt: string }[]> => {
+    const res = await fetch(`${API_URL}/invitations`, fetchOptions());
+    if (!res.ok) throw new Error("Failed to fetch invitations");
+    return res.json();
+  },
+
+  acceptInvitation: async (id: string): Promise<{ success: boolean; tripId: string }> => {
+    const res = await fetch(`${API_URL}/invitations/${id}/accept`, fetchOptions({
+      method: "POST",
+    }));
+    if (!res.ok) throw new Error("Failed to accept invitation");
+    return res.json();
   },
 };

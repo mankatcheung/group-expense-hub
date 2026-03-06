@@ -21,6 +21,8 @@ model User {
   verification Verification[]
 
   trips Trip[]
+  tripMembers TripMember[]
+  tripInvitations TripInvitation[]
 }
 
 model Session {
@@ -75,6 +77,36 @@ model Trip {
   user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   members   Member[]
   expenses  Expense[]
+  tripMembers TripMember[]
+  invitations TripInvitation[]
+}
+
+model TripMember {
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String
+  role      String   @default("collaborator")
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+}
+
+model TripInvitation {
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String?
+  email     String
+  role      String   @default("collaborator")
+  token     String   @unique @default(uuid())
+  status    String   @default("pending")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, email])
 }
 
 model Member {

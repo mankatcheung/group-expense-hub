@@ -1,17 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTrip } from "@/context/TripContext";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plane, Plus, Trash2, ChevronRight, MapPin, LogOut } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Plane, Plus, Trash2, ChevronRight, MapPin, LogOut, Mail, Check, Loader2 } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/currencies";
+import { api } from "@/services/api";
+
+interface Invitation {
+  id: string;
+  token: string;
+  tripId: string;
+  tripName: string;
+  inviter: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  createdAt: string;
+}
 
 const Index = () => {
-  const { trips, createTrip, deleteTrip } = useTrip();
+  const { trips, createTrip, deleteTrip, refreshTrips } = useTrip();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tripName, setTripName] = useState("");
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      handleJoinByToken(token);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    loadInvitations();
+  }, []);
+
+  const loadInvitations = async () => {
+    setLoadingInvitations(true);
+    try {
+      const data = await api.getInvitations();
+      setInvitations(data);
+    } catch (error) {
+      console.error("Failed to load invitations:", error);
+    } finally {
+      setLoadingInvitations(false);
+    }
+  };
+
+  const handleJoinByToken = async (token: string) => {
+    try {
+      const result = await api.joinTrip(token);
+      refreshTrips();
+      navigate(`/trip/${result.tripId}`);
+    } catch (error) {
+      console.error("Failed to join trip:", error);
+    }
+  };
+
+  const handleAccept = async (id: string) => {
+    setAcceptingId(id);
+    try {
+      const result = await api.acceptInvitation(id);
+      refreshTrips();
+      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      navigate(`/trip/${result.tripId}`);
+    } catch (error) {
+      console.error("Failed to accept invitation:", error);
+    } finally {
+      setAcceptingId(null);
+    }
+  };
 
   const handleCreate = () => {
     const name = tripName.trim();
@@ -71,57 +138,120 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Trip List */}
-        {trips.length > 0 ? (
-          <div className="space-y-3">
-            <h2 className="text-lg font-display font-semibold text-foreground">Your Trips</h2>
-            {trips.map((trip) => {
-              const totalByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
-                acc[e.currency] = (acc[e.currency] || 0) + e.amount;
-                return acc;
-              }, {});
-              const totals = Object.entries(totalByCurrency);
+        {/* Tabs */}
+        <Tabs defaultValue="trips" className="space-y-4">
+          <TabsList className="w-full">
+            <TabsTrigger value="trips" className="flex-1">Trips</TabsTrigger>
+            <TabsTrigger value="invitations" className="flex-1">
+              Invitations
+              {invitations.length > 0 && (
+                <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                  {invitations.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-              return (
-                <div
-                  key={trip.id}
-                  className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/50"
-                  onClick={() => navigate(`/trip/${trip.id}`)}
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <MapPin className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{trip.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} · {trip.expenses.length} expense{trip.expenses.length !== 1 ? "s" : ""}
-                      {totals.length > 0 && (
-                        <span>
-                          {" "}· {totals.map(([cur, amt]) => `${getCurrencySymbol(cur)}${amt.toFixed(0)}`).join(", ")}
-                        </span>
+          <TabsContent value="trips">
+            {/* Trip List */}
+            {trips.length > 0 ? (
+              <div className="space-y-3">
+                {trips.map((trip) => {
+                  const totalByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
+                    acc[e.currency] = (acc[e.currency] || 0) + e.amount;
+                    return acc;
+                  }, {});
+                  const totals = Object.entries(totalByCurrency);
+
+                  return (
+                    <div
+                      key={trip.id}
+                      className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/50"
+                      onClick={() => navigate(`/trip/${trip.id}`)}
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <MapPin className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{trip.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} · {trip.expenses.length} expense{trip.expenses.length !== 1 ? "s" : ""}
+                          {totals.length > 0 && (
+                            <span>
+                              {" "}· {totals.map(([cur, amt]) => `${getCurrencySymbol(cur)}${amt.toFixed(0)}`).join(", ")}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {trip.isOwner && (
+                        <button
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            deleteTrip(trip.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       )}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      deleteTrip(trip.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 rounded-lg"
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-8 text-center">
+                <MapPin className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-muted-foreground text-sm">Create your first trip to get started</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="invitations">
+            {loadingInvitations ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : invitations.length > 0 ? (
+              <div className="space-y-3">
+                {invitations.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <MapPin className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground text-sm">Create your first trip to get started</p>
-          </div>
-        )}
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{inv.tripName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Invited by {inv.inviter.name || inv.inviter.email}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAccept(inv.id)}
+                      disabled={acceptingId === inv.id}
+                      className="gap-1"
+                    >
+                      {acceptingId === inv.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="h-3 w-3" />
+                      )}
+                      Accept
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-8 text-center">
+                <Mail className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-muted-foreground text-sm">No pending invitations</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

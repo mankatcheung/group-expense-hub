@@ -21,10 +21,27 @@ export interface Balance {
   currency: string;
 }
 
+export interface TripUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+export interface TripMember {
+  id: string;
+  userId: string;
+  role: string;
+  user: TripUser;
+}
+
 export interface Trip {
   id: string;
   name: string;
   members: Member[];
+  tripMembers: TripMember[];
   expenses: Expense[];
   createdAt: string;
+  isOwner: boolean;
+  owner: TripUser | null;
 }

@@ -12,6 +12,9 @@ interface TripContextType {
   addExpense: (tripId: string, expense: Expense) => void;
   updateExpense: (tripId: string, expense: Expense) => void;
   removeExpense: (tripId: string, expenseId: string) => void;
+  inviteMember: (tripId: string, email: string) => Promise<{ success: boolean; user?: any }>;
+  removeCollaborator: (tripId: string, memberId: string) => void;
+  refreshTrips: () => void;
 }
 
 const TripContext = createContext<TripContextType | null>(null);
@@ -31,8 +34,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       name,
       members: [],
+      tripMembers: [],
       expenses: [],
       createdAt: new Date().toISOString(),
+      isOwner: true,
+      owner: null,
     };
 
     // Optimistic update
@@ -110,9 +116,43 @@ export function TripProvider({ children }: { children: ReactNode }) {
     api.removeExpense(tripId, expenseId).catch(console.error);
   }, []);
 
+  const inviteMember = useCallback(async (tripId: string, email: string) => {
+    const response = await api.inviteMember(tripId, email);
+    
+    if (response.user) {
+      updateTrip(tripId, (t) => ({
+        ...t,
+        tripMembers: [...t.tripMembers, {
+          id: crypto.randomUUID(),
+          userId: response.user.id,
+          role: "collaborator",
+          user: response.user,
+        }],
+        ...(response.member ? { members: [...t.members, response.member] } : {}),
+      }));
+    }
+    
+    return response;
+  }, []);
+
+  const removeCollaborator = useCallback((tripId: string, memberId: string) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      tripMembers: t.tripMembers.filter((m) => m.id !== memberId),
+    }));
+
+    api.removeCollaborator(tripId, memberId).catch(console.error);
+  }, []);
+
+  const refreshTrips = useCallback(() => {
+    api.getTrips()
+      .then(setTrips)
+      .catch(console.error);
+  }, []);
+
   return (
     <TripContext.Provider
-      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense }}
+      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
     >
       {children}
     </TripContext.Provider>
