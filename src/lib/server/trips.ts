@@ -3,12 +3,22 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-const adapter = new PrismaLibSql({
-  url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+const createPrismaClient = () => {
+  const adapter = new PrismaLibSql({
+    url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+  return new PrismaClient({ adapter });
+};
 
-const prisma = new PrismaClient({ adapter });
+let prisma: PrismaClient;
+
+const getPrisma = () => {
+  if (!prisma) {
+    prisma = createPrismaClient();
+  }
+  return prisma;
+};
 
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -38,7 +48,7 @@ async function getSession() {
 export type TripAccessLevel = "owner" | "collaborator" | null;
 
 async function getTripAccessLevel(tripId: string, userId: string): Promise<TripAccessLevel> {
-  const trip = await prisma.trip.findUnique({
+  const trip = await getPrisma().trip.findUnique({
     where: { id: tripId },
     select: { userId: true },
   });
@@ -47,7 +57,7 @@ async function getTripAccessLevel(tripId: string, userId: string): Promise<TripA
 
   if (trip.userId === userId) return "owner";
 
-  const member = await prisma.tripMember.findUnique({
+  const member = await getPrisma().tripMember.findUnique({
     where: {
       tripId_userId: {
         tripId,
@@ -115,7 +125,7 @@ export async function getTrips() {
   const session = await getSession();
   const userId = session.user.id;
 
-  const ownedTrips = await prisma.trip.findMany({
+  const ownedTrips = await getPrisma().trip.findMany({
     where: {
       userId,
     },
@@ -140,12 +150,12 @@ export async function getTrips() {
     },
   });
 
-  const collaboratorTripIds = await prisma.tripMember.findMany({
+  const collaboratorTripIds = await getPrisma().tripMember.findMany({
     where: { userId },
     select: { tripId: true },
   });
 
-  const collaboratorTrips = await prisma.trip.findMany({
+  const collaboratorTrips = await getPrisma().trip.findMany({
     where: {
       id: { in: collaboratorTripIds.map((t) => t.tripId) },
     },
@@ -183,7 +193,7 @@ export async function getTrip(id: string) {
     throw new Error("Trip not found");
   }
 
-  const trip = await prisma.trip.findUnique({
+  const trip = await getPrisma().trip.findUnique({
     where: { id },
     include: {
       members: true,
@@ -213,7 +223,7 @@ export async function getTrip(id: string) {
 export async function createTrip(data: { id: string; name: string; createdAt?: string }) {
   const session = await getSession();
 
-  const trip = await prisma.trip.create({
+  const trip = await getPrisma().trip.create({
     data: {
       id: data.id,
       name: data.name,
@@ -238,7 +248,7 @@ export async function createTrip(data: { id: string; name: string; createdAt?: s
 export async function deleteTrip(id: string) {
   const session = await getSession();
 
-  await prisma.trip.delete({
+  await getPrisma().trip.delete({
     where: { id, userId: session.user.id },
   });
 
@@ -254,7 +264,7 @@ export async function addMember(tripId: string, data: { id: string; name: string
     throw new Error("Not authorized to edit this trip");
   }
 
-  const member = await prisma.member.create({
+  const member = await getPrisma().member.create({
     data: {
       id: data.id,
       name: data.name,
@@ -275,7 +285,7 @@ export async function removeMember(tripId: string, memberId: string, force: bool
     throw new Error("Not authorized to edit this trip");
   }
 
-  const member = await prisma.member.findUnique({
+  const member = await getPrisma().member.findUnique({
     where: { id: memberId },
   });
 
@@ -283,7 +293,7 @@ export async function removeMember(tripId: string, memberId: string, force: bool
     throw new Error("Member not found");
   }
 
-  const expensesWithMember = await prisma.expense.findMany({
+  const expensesWithMember = await getPrisma().expense.findMany({
     where: {
       tripId,
       OR: [
@@ -304,11 +314,11 @@ export async function removeMember(tripId: string, memberId: string, force: bool
   }
 
   if (hasExpenses && force) {
-    await prisma.$transaction([
-      prisma.expenseSplit.deleteMany({
+    await getPrisma().$transaction([
+      getPrisma().expenseSplit.deleteMany({
         where: { memberId },
       }),
-      prisma.expense.deleteMany({
+      getPrisma().expense.deleteMany({
         where: {
           tripId,
           OR: [
@@ -317,12 +327,12 @@ export async function removeMember(tripId: string, memberId: string, force: bool
           ],
         },
       }),
-      prisma.member.delete({
+      getPrisma().member.delete({
         where: { id: memberId },
       }),
     ]);
   } else {
-    await prisma.member.delete({
+    await getPrisma().member.delete({
       where: { id: memberId },
     });
   }
@@ -350,7 +360,7 @@ export async function addExpense(
     throw new Error("Not authorized to edit this trip");
   }
 
-  await prisma.expense.create({
+  await getPrisma().expense.create({
     data: {
       id: data.id,
       description: data.description,
@@ -390,7 +400,7 @@ export async function updateExpense(
     throw new Error("Not authorized to edit this trip");
   }
 
-  await prisma.expense.update({
+  await getPrisma().expense.update({
     where: { id: expenseId },
     data: {
       description: data.description,
@@ -420,7 +430,7 @@ export async function removeExpense(tripId: string, expenseId: string) {
     throw new Error("Not authorized to edit this trip");
   }
 
-  await prisma.expense.delete({
+  await getPrisma().expense.delete({
     where: { id: expenseId },
   });
 
@@ -451,7 +461,7 @@ export async function inviteMember(tripId: string, email: string) {
     throw new Error("Only the owner can invite members");
   }
 
-  const trip = await prisma.trip.findUnique({
+  const trip = await getPrisma().trip.findUnique({
     where: { id: tripId },
     include: { user: true },
   });
@@ -462,12 +472,12 @@ export async function inviteMember(tripId: string, email: string) {
 
   const inviterName = trip.user?.name || trip.user?.email || "Someone";
 
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { email },
   });
 
   if (!user) {
-    const existingInvitation = await prisma.tripInvitation.findUnique({
+    const existingInvitation = await getPrisma().tripInvitation.findUnique({
       where: {
         tripId_email: {
           tripId,
@@ -486,7 +496,7 @@ export async function inviteMember(tripId: string, email: string) {
 
     const token = crypto.randomUUID();
 
-    await prisma.tripInvitation.upsert({
+    await getPrisma().tripInvitation.upsert({
       where: {
         tripId_email: {
           tripId,
@@ -513,7 +523,7 @@ export async function inviteMember(tripId: string, email: string) {
     };
   }
 
-  const existingMember = await prisma.tripMember.findUnique({
+  const existingMember = await getPrisma().tripMember.findUnique({
     where: {
       tripId_userId: {
         tripId,
@@ -530,15 +540,15 @@ export async function inviteMember(tripId: string, email: string) {
     throw new Error("Cannot invite yourself");
   }
 
-  const [tripMember, member] = await prisma.$transaction([
-    prisma.tripMember.create({
+  const [tripMember, member] = await getPrisma().$transaction([
+    getPrisma().tripMember.create({
       data: {
         tripId,
         userId: user.id,
         role: "collaborator",
       },
     }),
-    prisma.member.create({
+    getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
         name: user.name || user.email.split("@")[0],
@@ -574,7 +584,7 @@ export async function removeCollaborator(tripId: string, memberId: string) {
     throw new Error("Only the owner can remove members");
   }
 
-  const tripMember = await prisma.tripMember.findUnique({
+  const tripMember = await getPrisma().tripMember.findUnique({
     where: { id: memberId },
     include: { user: true },
   });
@@ -583,11 +593,11 @@ export async function removeCollaborator(tripId: string, memberId: string) {
     throw new Error("Member not found");
   }
 
-  await prisma.$transaction([
-    prisma.tripMember.delete({
+  await getPrisma().$transaction([
+    getPrisma().tripMember.delete({
       where: { id: memberId },
     }),
-    prisma.member.deleteMany({
+    getPrisma().member.deleteMany({
       where: {
         tripId,
         name: tripMember.user.name || tripMember.user.email.split("@")[0],
@@ -603,7 +613,7 @@ export async function joinTrip(token: string) {
   const session = await getSession();
   const userId = session.user.id;
 
-  const invitation = await prisma.tripInvitation.findUnique({
+  const invitation = await getPrisma().tripInvitation.findUnique({
     where: { token },
   });
 
@@ -619,7 +629,7 @@ export async function joinTrip(token: string) {
     throw new Error("Invitation already used");
   }
 
-  const existingMember = await prisma.tripMember.findUnique({
+  const existingMember = await getPrisma().tripMember.findUnique({
     where: {
       tripId_userId: {
         tripId: invitation.tripId,
@@ -632,19 +642,19 @@ export async function joinTrip(token: string) {
     throw new Error("Already a member");
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: { id: userId },
   });
 
-  await prisma.$transaction([
-    prisma.tripMember.create({
+  await getPrisma().$transaction([
+    getPrisma().tripMember.create({
       data: {
         tripId: invitation.tripId,
         userId,
         role: invitation.role || "collaborator",
       },
     }),
-    prisma.member.create({
+    getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
         name: user?.name || user?.email.split("@")[0] || "User",
@@ -652,7 +662,7 @@ export async function joinTrip(token: string) {
         tripId: invitation.tripId,
       },
     }),
-    prisma.tripInvitation.update({
+    getPrisma().tripInvitation.update({
       where: { id: invitation.id },
       data: { status: "accepted" },
     }),
@@ -665,7 +675,7 @@ export async function joinTrip(token: string) {
 export async function getInvitations() {
   const session = await getSession();
 
-  const invitations = await prisma.tripInvitation.findMany({
+  const invitations = await getPrisma().tripInvitation.findMany({
     where: {
       email: session.user.email,
       status: "pending",
@@ -696,7 +706,7 @@ export async function acceptInvitation(id: string) {
   const session = await getSession();
   const userId = session.user.id;
 
-  const invitation = await prisma.tripInvitation.findUnique({
+  const invitation = await getPrisma().tripInvitation.findUnique({
     where: { id },
   });
 
@@ -716,7 +726,7 @@ export async function acceptInvitation(id: string) {
     throw new Error("Invitation already used");
   }
 
-  const existingMember = await prisma.tripMember.findUnique({
+  const existingMember = await getPrisma().tripMember.findUnique({
     where: {
       tripId_userId: {
         tripId: invitation.tripId,
@@ -729,15 +739,15 @@ export async function acceptInvitation(id: string) {
     throw new Error("Already a member");
   }
 
-  await prisma.$transaction([
-    prisma.tripMember.create({
+  await getPrisma().$transaction([
+    getPrisma().tripMember.create({
       data: {
         tripId: invitation.tripId,
         userId,
         role: invitation.role || "collaborator",
       },
     }),
-    prisma.member.create({
+    getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
         name: session.user.name || session.user.email.split("@")[0],
@@ -745,7 +755,7 @@ export async function acceptInvitation(id: string) {
         tripId: invitation.tripId,
       },
     }),
-    prisma.tripInvitation.update({
+    getPrisma().tripInvitation.update({
       where: { id: invitation.id },
       data: { status: "accepted" },
     }),
