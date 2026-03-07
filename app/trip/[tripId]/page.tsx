@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+"use client";
+
+export const dynamic = 'force-dynamic';
+
+import { useState, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTrip } from "@/context/TripContext";
 import { calculateBalances } from "@/lib/balances";
 import ExpenseList from "@/components/ExpenseList";
@@ -12,9 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const TripDetail = () => {
-  const { tripId } = useParams<{ tripId: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
+function TripDetailContent() {
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tripId = params.tripId as string;
   const {
     getTrip,
     removeExpense,
@@ -24,28 +30,25 @@ const TripDetail = () => {
     inviteMember,
     removeCollaborator,
   } = useTrip();
-  const navigate = useNavigate();
 
   const [inviteOpen, setInviteOpen] = useState(false);
 
   const currentTab = searchParams.get("tab") || "summary";
 
   const handleTabChange = (value: string) => {
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", value);
-      return newParams;
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.push(`?${params.toString()}`);
   };
 
-  const trip = getTrip(tripId!);
+  const trip = getTrip(tripId);
 
   if (!trip) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Trip not found</p>
-          <Button variant="outline" onClick={() => navigate("/")}>
+          <Button variant="outline" onClick={() => router.push("/")}>
             Go Home
           </Button>
         </div>
@@ -61,13 +64,13 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBackButton onBack={() => navigate("/")} />
+      <Header showBackButton onBack={() => router.push("/")} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-6">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/")}
+            onClick={() => router.push("/")}
             className="gap-2 text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -75,7 +78,6 @@ const TripDetail = () => {
           </Button>
         </div>
 
-        {/* Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
@@ -90,7 +92,6 @@ const TripDetail = () => {
           </p>
         </div>
 
-        {/* Tabs */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="w-full">
             <TabsTrigger value="summary" className="flex-1">
@@ -117,7 +118,6 @@ const TripDetail = () => {
           </TabsContent>
 
           <TabsContent value="members" className="space-y-4">
-            {/* Collaborators Section */}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold flex items-center gap-2">
@@ -136,7 +136,6 @@ const TripDetail = () => {
                 )}
               </div>
 
-              {/* Owner */}
               <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 mb-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={trip.owner?.image || undefined} />
@@ -153,7 +152,6 @@ const TripDetail = () => {
                 <Crown className="h-4 w-4 text-yellow-500" />
               </div>
 
-              {/* Collaborators */}
               {trip.tripMembers?.length > 0 ? (
                 trip.tripMembers?.map((member) => (
                   <div
@@ -195,7 +193,6 @@ const TripDetail = () => {
               )}
             </div>
 
-            {/* Local Members (for expense splitting) */}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <MemberManager
                 members={trip.members}
@@ -208,7 +205,7 @@ const TripDetail = () => {
 
           <TabsContent value="expenses" className="space-y-4">
             <Button
-              onClick={() => navigate(`/trip/${trip.id}/add`)}
+              onClick={() => router.push(`/trip/${trip.id}/add`)}
               className="w-full gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -231,6 +228,12 @@ const TripDetail = () => {
       />
     </div>
   );
-};
+}
 
-export default TripDetail;
+export default function TripDetailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <TripDetailContent />
+    </Suspense>
+  );
+}

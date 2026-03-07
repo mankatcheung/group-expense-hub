@@ -1,19 +1,24 @@
-import { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+"use client";
+
+export const dynamic = 'force-dynamic';
+
+import { useState, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plane } from "lucide-react";
 
-export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,18 +37,18 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      const { error } = await authClient.resetPassword({
+      const { error: authError } = await authClient.resetPassword({
         token,
         newPassword: password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (authError) {
+        setError(authError.message || "Failed to reset password");
         return;
       }
 
       setSuccess(true);
-      setTimeout(() => navigate("/login"), 3000);
+      setTimeout(() => router.push("/login"), 3000);
     } catch (err: any) {
       setError(err.message || "Failed to reset password");
     } finally {
@@ -69,7 +74,7 @@ export default function ResetPasswordPage() {
 
           <div className="text-center text-sm">
             <Link
-              to="/forgot-password"
+              href="/forgot-password"
               className="font-medium text-primary hover:underline"
             >
               Request a new reset link
@@ -98,7 +103,7 @@ export default function ResetPasswordPage() {
 
           <div className="text-center text-sm">
             <Link
-              to="/login"
+              href="/login"
               className="font-medium text-primary hover:underline"
             >
               Go to sign in
@@ -154,5 +159,13 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

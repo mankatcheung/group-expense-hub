@@ -1,7 +1,9 @@
+"use client";
+
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, Plane } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -10,11 +12,11 @@ interface HeaderProps {
 
 export default function Header({ showBackButton, onBack }: HeaderProps) {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    router.push("/login");
   };
 
   return (

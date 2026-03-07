@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
+"use client";
+
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, Suspense } from "react";
 import { useTrip } from "@/context/TripContext";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -23,10 +27,10 @@ interface Invitation {
   createdAt: string;
 }
 
-const Index = () => {
+function IndexContent() {
   const { trips, createTrip, deleteTrip, refreshTrips } = useTrip();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [tripName, setTripName] = useState("");
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
@@ -46,11 +50,9 @@ const Index = () => {
   }, []);
 
   const handleTabChange = (value: string) => {
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", value);
-      return newParams;
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.push(`?${params.toString()}`);
   };
 
   const loadInvitations = async () => {
@@ -69,7 +71,7 @@ const Index = () => {
     try {
       const result = await api.joinTrip(token);
       refreshTrips();
-      navigate(`/trip/${result.tripId}`);
+      router.push(`/trip/${result.tripId}`);
     } catch (error) {
       console.error("Failed to join trip:", error);
     }
@@ -81,7 +83,7 @@ const Index = () => {
       const result = await api.acceptInvitation(id);
       refreshTrips();
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
-      navigate(`/trip/${result.tripId}`);
+      router.push(`/trip/${result.tripId}`);
     } catch (error) {
       console.error("Failed to accept invitation:", error);
     } finally {
@@ -94,7 +96,7 @@ const Index = () => {
     if (!name) return;
     const trip = createTrip(name);
     setTripName("");
-    navigate(`/trip/${trip.id}`);
+    router.push(`/trip/${trip.id}`);
   };
 
   return (
@@ -102,7 +104,6 @@ const Index = () => {
       <Header />
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
-        {/* Header */}
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
@@ -115,7 +116,6 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Create Trip */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
           <h2 className="text-lg font-display font-semibold text-foreground mb-3">New Trip</h2>
           <div className="flex gap-2">
@@ -133,7 +133,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Tabs */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="w-full">
             <TabsTrigger value="trips" className="flex-1">Trips</TabsTrigger>
@@ -148,7 +147,6 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="trips">
-            {/* Trip List */}
             {trips.length > 0 ? (
               <div className="space-y-3">
                 {trips.map((trip) => {
@@ -162,7 +160,7 @@ const Index = () => {
                     <div
                       key={trip.id}
                       className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/50"
-                      onClick={() => navigate(`/trip/${trip.id}`)}
+                      onClick={() => router.push(`/trip/${trip.id}`)}
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <MapPin className="h-5 w-5" />
@@ -250,6 +248,12 @@ const Index = () => {
       </div>
     </div>
   );
-};
+}
 
-export default Index;
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <IndexContent />
+    </Suspense>
+  );
+}

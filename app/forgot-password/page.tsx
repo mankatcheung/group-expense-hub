@@ -1,5 +1,9 @@
+"use client";
+
+export const dynamic = 'force-dynamic';
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +14,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,12 +21,12 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const { error } = await authClient.requestPasswordReset({
-        email,
+      const { error: authError } = await authClient.requestPasswordReset({
+        email: email,
       });
 
-      if (error) {
-        setError(error.message);
+      if (authError) {
+        setError(authError.message || "Failed to send reset email");
         return;
       }
 
@@ -47,13 +50,13 @@ export default function ForgotPasswordPage() {
               Check your email
             </h2>
             <p className="text-sm text-muted-foreground mt-2">
-              We've sent you a password reset link. Please check your email.
+              We&apos;ve sent you a password reset link. Please check your email.
             </p>
           </div>
 
           <div className="text-center text-sm">
             <Link
-              to="/login"
+              href="/login"
               className="font-medium text-primary hover:underline"
             >
               Back to sign in
@@ -75,7 +78,7 @@ export default function ForgotPasswordPage() {
             Reset your password
           </h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Enter your email and we'll send you a reset link
+            Enter your email and we&apos;ll send you a reset link
           </p>
         </div>
 
@@ -103,7 +106,7 @@ export default function ForgotPasswordPage() {
           <p className="text-muted-foreground">
             Remember your password?{" "}
             <Link
-              to="/login"
+              href="/login"
               className="font-medium text-primary hover:underline"
             >
               Sign in
