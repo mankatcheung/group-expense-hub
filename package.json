@@ -3,11 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "concurrently \"next dev\" \"tsx watch --clear-screen=false server/index.ts\"",
-    "dev:web": "next dev",
-    "dev:server": "tsx watch --clear-screen=false server/index.ts",
+    "dev": "next dev",
     "build": "next build",
-    "build:dev": "next build",
     "lint": "next lint",
     "start": "next start",
     "test": "vitest run",

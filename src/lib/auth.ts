@@ -1,21 +1,23 @@
 import { betterAuth } from "better-auth";
+import { PrismaClient } from "@prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
-import prisma from "../prisma/client";
-import { sendVerificationEmail, sendResetPasswordEmail } from "./email";
+
+const adapter = new PrismaLibSql({
+  url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
-  },
-  emailVerification: {
-    sendVerificationEmail,
-  },
-  forgotPassword: {
-    sendResetPasswordEmail,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7,
@@ -26,5 +28,4 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: ["http://localhost:3000"],
-  baseURL: "http://localhost:4040",
 });
