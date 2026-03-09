@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password"];
+const AUTH_PAGES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+];
 
 export function proxy(request: NextRequest) {
-  const sessionToken = request.cookies.get("better-auth.session_token");
+  // Dynamically catch both local and secure production cookies
+  const sessionToken =
+    request.cookies.get("better-auth.session_token") ??
+    request.cookies.get("__Secure-better-auth.session_token") ??
+    request.cookies
+      .getAll()
+      .find((c) => c.name.endsWith("better-auth.session_token"));
   const { pathname } = request.nextUrl;
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
