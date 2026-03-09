@@ -1,9 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { Member, Expense, Trip } from "@/lib/types";
 import { api } from "@/services/api";
+import { toast } from "sonner";
 
 interface TripContextType {
   trips: Trip[];
+  isLoading: boolean;
+  error: string | null;
   createTrip: (name: string) => Trip;
   deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
@@ -21,12 +24,23 @@ const TripContext = createContext<TripContextType | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load trips from API on mount
   useEffect(() => {
+    setIsLoading(true);
+    setError(null);
     api.getTrips()
       .then(setTrips)
-      .catch(console.error);
+      .catch((err) => {
+        const message = err?.message || "Failed to load trips";
+        setError(message);
+        toast.error("Failed to load trips", {
+          description: "Please try refreshing the page.",
+        });
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const createTrip = useCallback((name: string) => {
@@ -45,18 +59,25 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setTrips((prev) => [trip, ...prev]);
 
     // API call
-    api.createTrip(trip).catch(console.error);
+    api.createTrip(trip).catch((err) => {
+      setTrips((prev) => prev.filter((t) => t.id !== trip.id));
+      toast.error("Failed to create trip", { description: err?.message });
+    });
 
     return trip;
   }, []);
 
   const deleteTrip = useCallback((id: string) => {
+    const previousTrips = trips;
     // Optimistic update
     setTrips((prev) => prev.filter((t) => t.id !== id));
 
     // API call
-    api.deleteTrip(id).catch(console.error);
-  }, []);
+    api.deleteTrip(id).catch((err) => {
+      setTrips(previousTrips);
+      toast.error("Failed to delete trip", { description: err?.message });
+    });
+  }, [trips]);
 
   const getTrip = useCallback((id: string) => {
     return trips.find((t) => t.id === id);
@@ -71,7 +92,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateTrip(tripId, (t) => ({ ...t, members: [...t.members, member] }));
 
     // API call
-    api.addMember(tripId, member).catch(console.error);
+    api.addMember(tripId, member).catch((err) => {
+      updateTrip(tripId, (t) => ({ ...t, members: t.members.filter((m) => m.id !== member.id) }));
+      toast.error("Failed to add member", { description: err?.message });
+    });
   }, []);
 
   const removeMember = useCallback(async (tripId: string, memberId: string, force: boolean = false) => {
@@ -100,7 +124,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateTrip(tripId, (t) => ({ ...t, expenses: [expense, ...t.expenses] }));
 
     // API call
-    api.addExpense(tripId, expense).catch(console.error);
+    api.addExpense(tripId, expense).catch((err) => {
+      updateTrip(tripId, (t) => ({ ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) }));
+      toast.error("Failed to add expense", { description: err?.message });
+    });
   }, []);
 
   const updateExpense = useCallback((tripId: string, expense: Expense) => {
@@ -108,7 +135,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       ...t,
       expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)),
     }));
-    api.updateExpense(tripId, expense).catch(console.error);
+    api.updateExpense(tripId, expense).catch((err) => {
+      refreshTrips();
+      toast.error("Failed to update expense", { description: err?.message });
+    });
   }, []);
 
   const removeExpense = useCallback((tripId: string, expenseId: string) => {
@@ -119,7 +149,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }));
 
     // API call
-    api.removeExpense(tripId, expenseId).catch(console.error);
+    api.removeExpense(tripId, expenseId).catch((err) => {
+      refreshTrips();
+      toast.error("Failed to remove expense", { description: err?.message });
+    });
   }, []);
 
   const inviteMember = useCallback(async (tripId: string, email: string) => {
@@ -147,18 +180,23 @@ export function TripProvider({ children }: { children: ReactNode }) {
       tripMembers: t.tripMembers.filter((m) => m.id !== memberId),
     }));
 
-    api.removeCollaborator(tripId, memberId).catch(console.error);
+    api.removeCollaborator(tripId, memberId).catch((err) => {
+      refreshTrips();
+      toast.error("Failed to remove collaborator", { description: err?.message });
+    });
   }, []);
 
   const refreshTrips = useCallback(() => {
     api.getTrips()
       .then(setTrips)
-      .catch(console.error);
+      .catch((err) => {
+        toast.error("Failed to refresh trips", { description: err?.message });
+      });
   }, []);
 
   return (
     <TripContext.Provider
-      value={{ trips, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
+      value={{ trips, isLoading, error, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
     >
       {children}
     </TripContext.Provider>

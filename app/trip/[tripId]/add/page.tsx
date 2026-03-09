@@ -6,16 +6,61 @@ import { useParams, useRouter } from "next/navigation";
 import { useTrip } from "@/context/TripContext";
 import AddExpense from "@/components/AddExpense";
 import Header from "@/components/Header";
-import { Plane, ArrowLeft } from "lucide-react";
+import { Plane, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AddExpensePage() {
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
-  const { getTrip, addExpense } = useTrip();
+  const { getTrip, addExpense, isLoading, error, refreshTrips } = useTrip();
 
   const trip = getTrip(tripId);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header showBackButton onBack={() => router.push(`/trip/${tripId}`)} />
+        <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+          <div className="mb-8 text-center space-y-4">
+            <Skeleton className="h-14 w-14 rounded-2xl mx-auto" />
+            <Skeleton className="h-8 w-48 mx-auto" />
+            <Skeleton className="h-4 w-40 mx-auto" />
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header showBackButton onBack={() => router.push(`/trip/${tripId}`)} />
+        <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+          <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
+            <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
+            <p className="text-destructive text-sm font-medium mb-1">Failed to load trip data</p>
+            <p className="text-muted-foreground text-xs mb-4">{error}</p>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" size="sm" onClick={refreshTrips}>
+                Try Again
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => router.push("/")}>
+                Go Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!trip) {
     return (

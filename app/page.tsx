@@ -8,10 +8,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
-import { Plus, Trash2, ChevronRight, MapPin, Mail, Check, Loader2, Plane } from "lucide-react";
+import { Plus, Trash2, ChevronRight, MapPin, Mail, Check, Loader2, Plane, AlertCircle } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { api } from "@/services/api";
+import { toast } from "sonner";
 
 interface Invitation {
   id: string;
@@ -23,12 +25,12 @@ interface Invitation {
     name: string | null;
     email: string;
     image: string | null;
-  };
+  } | null;
   createdAt: string;
 }
 
 function IndexContent() {
-  const { trips, createTrip, deleteTrip, refreshTrips } = useTrip();
+  const { trips, isLoading, error, createTrip, deleteTrip, refreshTrips } = useTrip();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tripName, setTripName] = useState("");
@@ -60,8 +62,8 @@ function IndexContent() {
     try {
       const data = await api.getInvitations();
       setInvitations(data);
-    } catch (error) {
-      console.error("Failed to load invitations:", error);
+    } catch (error: any) {
+      toast.error("Failed to load invitations", { description: error?.message });
     } finally {
       setLoadingInvitations(false);
     }
@@ -72,8 +74,8 @@ function IndexContent() {
       const result = await api.joinTrip(token);
       refreshTrips();
       router.push(`/trip/${result.tripId}`);
-    } catch (error) {
-      console.error("Failed to join trip:", error);
+    } catch (error: any) {
+      toast.error("Failed to join trip", { description: error?.message });
     }
   };
 
@@ -84,8 +86,8 @@ function IndexContent() {
       refreshTrips();
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
       router.push(`/trip/${result.tripId}`);
-    } catch (error) {
-      console.error("Failed to accept invitation:", error);
+    } catch (error: any) {
+      toast.error("Failed to accept invitation", { description: error?.message });
     } finally {
       setAcceptingId(null);
     }
@@ -147,7 +149,29 @@ function IndexContent() {
           </TabsList>
 
           <TabsContent value="trips">
-            {trips.length > 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+                    <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-[140px]" />
+                      <Skeleton className="h-3 w-[200px]" />
+                    </div>
+                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
+                <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
+                <p className="text-destructive text-sm font-medium mb-1">Failed to load trips</p>
+                <p className="text-muted-foreground text-xs mb-4">{error}</p>
+                <Button variant="outline" size="sm" onClick={refreshTrips}>
+                  Try Again
+                </Button>
+              </div>
+            ) : trips.length > 0 ? (
               <div className="space-y-3">
                 {trips.map((trip) => {
                   const totalByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
@@ -218,7 +242,7 @@ function IndexContent() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{inv.tripName}</p>
                       <p className="text-xs text-muted-foreground">
-                        Invited by {inv.inviter.name || inv.inviter.email}
+                        Invited by {inv.inviter?.name || inv.inviter?.email || "Unknown"}
                       </p>
                     </div>
                     <Button
