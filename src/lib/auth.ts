@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 
+import { nextCookies } from "better-auth/next-js";
+
 const adapter = new PrismaLibSql({
   url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
   authToken: process.env.TURSO_AUTH_TOKEN,
@@ -10,6 +12,7 @@ const adapter = new PrismaLibSql({
 const prisma = new PrismaClient({ adapter });
 
 export const auth = betterAuth({
+  plugins: [nextCookies()],
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   database: prismaAdapter(prisma, {
     provider: "sqlite",
@@ -26,8 +29,7 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: [
-    "http://localhost:3000",
-    process.env.BETTER_AUTH_URL,
-  ].filter((origin): origin is string => Boolean(origin)),
+  trustedOrigins: ["http://localhost:3000", process.env.BETTER_AUTH_URL].filter(
+    (origin): origin is string => Boolean(origin),
+  ),
 });
