@@ -26,15 +26,23 @@ import { cookies } from "next/headers";
 
 async function getSession() {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("better-auth.session_token");
-  
+
+  // Check for secure cookie first (production/HTTPS), then fall back to regular cookie (development)
+  const sessionToken =
+    cookieStore.get("__Secure-better-auth.session_token") ||
+    cookieStore.get("better-auth.session_token");
+
   if (!sessionToken) {
     throw new Error("Unauthorized");
   }
 
+  const cookieName = sessionToken.name.startsWith("__Secure-")
+    ? "__Secure-better-auth.session_token"
+    : "better-auth.session_token";
+
   const session = await auth.api.getSession({
     headers: {
-      cookie: `better-auth.session_token=${sessionToken.value}`,
+      cookie: `${cookieName}=${sessionToken.value}`,
     },
   });
 
@@ -47,7 +55,10 @@ async function getSession() {
 
 export type TripAccessLevel = "owner" | "collaborator" | null;
 
-async function getTripAccessLevel(tripId: string, userId: string): Promise<TripAccessLevel> {
+async function getTripAccessLevel(
+  tripId: string,
+  userId: string,
+): Promise<TripAccessLevel> {
   const trip = await getPrisma().trip.findUnique({
     where: { id: tripId },
     select: { userId: true },
@@ -220,7 +231,11 @@ export async function getTrip(id: string) {
   return formatTrip(trip, userId);
 }
 
-export async function createTrip(data: { id: string; name: string; createdAt?: string }) {
+export async function createTrip(data: {
+  id: string;
+  name: string;
+  createdAt?: string;
+}) {
   const session = await getSession();
 
   const trip = await getPrisma().trip.create({
@@ -256,7 +271,10 @@ export async function deleteTrip(id: string) {
   return { success: true };
 }
 
-export async function addMember(tripId: string, data: { id: string; name: string; color: string }) {
+export async function addMember(
+  tripId: string,
+  data: { id: string; name: string; color: string },
+) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
@@ -277,7 +295,11 @@ export async function addMember(tripId: string, data: { id: string; name: string
   return member;
 }
 
-export async function removeMember(tripId: string, memberId: string, force: boolean = false) {
+export async function removeMember(
+  tripId: string,
+  memberId: string,
+  force: boolean = false,
+) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
@@ -296,10 +318,7 @@ export async function removeMember(tripId: string, memberId: string, force: bool
   const expensesWithMember = await getPrisma().expense.findMany({
     where: {
       tripId,
-      OR: [
-        { paidById: memberId },
-        { splits: { some: { memberId } } },
-      ],
+      OR: [{ paidById: memberId }, { splits: { some: { memberId } } }],
     },
   });
 
@@ -351,7 +370,7 @@ export async function addExpense(
     paidBy: string;
     splitAmong: string[];
     date?: string;
-  }
+  },
 ) {
   const session = await getSession();
 
@@ -391,7 +410,7 @@ export async function updateExpense(
     paidBy: string;
     splitAmong: string[];
     date?: string;
-  }
+  },
 ) {
   const session = await getSession();
 
