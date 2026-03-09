@@ -1,73 +1,139 @@
-# Welcome to your Lovable project
+# SplitTrip
 
-## Project info
+A modern web application for splitting group travel expenses with friends. No more awkward math - SplitTrip makes it easy to track, share, and settle expenses for trips with anyone.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Trip Management** - Create and organize trips with custom names
+- **Expense Tracking** - Add expenses and specify who paid and who to split among
+- **Balance Calculation** - Automatically calculates who owes whom
+- **Member Management** - Add trip members and invite collaborators via email
+- **Invitation System** - Accept trip invitations via email links
+- **User Authentication** - Secure email/password authentication with session management
+- **Responsive Design** - Works on desktop and mobile devices
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+### Frontend
+- **Next.js 16** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - UI component library built on Radix UI
+- **Lucide React** - Icon library
+- **Sonner** - Toast notifications
+- **Recharts** - Data visualization
+- **date-fns** - Date manipulation
+- **React Hook Form** - Form handling with Zod validation
+- **Tanstack React Query** - Data fetching (configured)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Backend
+- **Next.js API Routes / Server Actions** - Backend API
+- **Better-Auth** - Authentication framework
+- **Prisma** - ORM with Prisma Client
+- **Turso (libSQL)** - SQLite-compatible database
+- **Zod** - Schema validation
 
-Changes made via Lovable will be committed automatically to this repo.
+### Development
+- **Vite** - Build tool (test runner)
+- **Vitest** - Testing framework
+- **ESLint** - Code linting
+- **PostCSS** - CSS processing
+- **Prisma CLI** - Database migrations and code generation
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js 18+
+- npm or yarn
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/group-expense-hub.git
+cd group-expense-hub
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Generate Prisma client
+npx prisma generate
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Database Setup
 
-**Use GitHub Codespaces**
+The project uses a SQLite database by default for local development. To set up the database:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# Push Prisma schema to database
+npx prisma db push
 
-## What technologies are used for this project?
+# Or create a migration
+npx prisma migrate dev
+```
 
-This project is built with:
+### Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Create a `.env` file in the root directory:
 
-## How can I deploy this project?
+```env
+# Database (Turso/libSQL)
+TURSO_DATABASE_URL=file:./dev.db
+TURSO_AUTH_TOKEN=
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+# Better Auth
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=your-secret-key-here
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Project Structure
 
-Yes, you can!
+```
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   │   └── auth/         # Better Auth endpoints
+│   ├── login/            # Login page
+│   ├── register/         # Registration page
+│   ├── forgot-password/  # Password reset
+│   ├── trip/             # Trip pages
+│   │   └── [tripId]/    # Dynamic trip routes
+│   └── page.tsx          # Home page
+├── src/
+│   ├── components/       # React components
+│   │   └── ui/           # shadcn/ui components
+│   ├── context/          # React contexts
+│   │   ├── AuthContext.tsx
+│   │   └── TripContext.tsx
+│   ├── lib/              # Utilities
+│   │   ├── auth.ts       # Better Auth config
+│   │   ├── auth-client.ts
+│   │   ├── balances.ts
+│   │   ├── currencies.ts
+│   │   ├── server/       # Server actions
+│   │   └── types.ts
+│   └── services/         # API client
+├── prisma/
+│   └── schema.prisma     # Database schema
+└── public/               # Static assets
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Scripts
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```bash
+npm run dev       # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+npm run test     # Run tests
+```
+
+## License
+
+MIT License
