@@ -4,7 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plane } from "lucide-react";
@@ -14,6 +16,13 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  if (!isLoading && isAuthenticated) {
+    router.replace("/");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

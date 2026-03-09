@@ -16,8 +16,13 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const { register } = useAuth();
+  const { register, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+
+  if (!isLoading && isAuthenticated) {
+    router.replace("/");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
