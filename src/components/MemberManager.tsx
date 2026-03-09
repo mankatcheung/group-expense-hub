@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { UserPlus, X, AlertTriangle, Loader2 } from "lucide-react";
+import { UserPlus, X, AlertTriangle, Loader2, Pencil } from "lucide-react";
 
 const MEMBER_COLORS = [
   "#22C55E",
@@ -34,11 +34,14 @@ interface Props {
   members: Member[];
   tripId: string;
   onAdd: (member: Member) => void;
+  onUpdate: (memberId: string, name: string) => void;
   onRemove: (id: string, force?: boolean) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
 }
 
-export default function MemberManager({ members, onAdd, onRemove }: Props) {
+export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Props) {
   const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<MemberWithExpenses | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -90,6 +93,33 @@ export default function MemberManager({ members, onAdd, onRemove }: Props) {
     setMemberToRemove(null);
   };
 
+  const handleEditClick = (member: Member) => {
+    setEditingId(member.id);
+    setEditValue(member.name);
+  };
+
+  const handleEditSave = (memberId: string) => {
+    const trimmed = editValue.trim();
+    if (trimmed) {
+      onUpdate(memberId, trimmed);
+    }
+    setEditingId(null);
+    setEditValue("");
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditValue("");
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, memberId: string) => {
+    if (e.key === "Enter") {
+      handleEditSave(memberId);
+    } else if (e.key === "Escape") {
+      handleEditCancel();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-display font-semibold text-foreground">Trip Members</h2>
@@ -116,18 +146,39 @@ export default function MemberManager({ members, onAdd, onRemove }: Props) {
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: m.color }}
             />
-            {m.name}
-            <button
-              onClick={() => handleRemoveClick(m)}
-              disabled={isChecking}
-              className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors disabled:opacity-50"
-            >
-              {isChecking ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <X className="h-3 w-3" />
-              )}
-            </button>
+            {editingId === m.id ? (
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => handleEditKeyDown(e, m.id)}
+                onBlur={() => handleEditSave(m.id)}
+                className="h-5 w-20 py-0 px-1 text-xs bg-background/50 border-input"
+                autoFocus
+              />
+            ) : (
+              <span className="max-w-[100px] truncate">{m.name}</span>
+            )}
+            {editingId !== m.id && (
+              <>
+                <button
+                  onClick={() => handleEditClick(m)}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => handleRemoveClick(m)}
+                  disabled={isChecking}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors disabled:opacity-50"
+                >
+                  {isChecking ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
+                </button>
+              </>
+            )}
           </span>
         ))}
         {members.length === 0 && (

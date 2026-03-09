@@ -29,6 +29,7 @@ function TripDetailContent() {
     removeExpense,
     updateExpense,
     addMember,
+    updateMember,
     removeMember,
     inviteMember,
     removeCollaborator,
@@ -249,6 +250,7 @@ function TripDetailContent() {
                 members={trip.members}
                 tripId={trip.id}
                 onAdd={(m) => addMember(trip.id, m)}
+                onUpdate={(memberId, name) => updateMember(trip.id, memberId, name)}
                 onRemove={(id) => removeMember(trip.id, id)}
               />
             </div>

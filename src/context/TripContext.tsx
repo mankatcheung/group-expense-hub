@@ -11,6 +11,7 @@ interface TripContextType {
   deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
   addMember: (tripId: string, member: Member) => void;
+  updateMember: (tripId: string, memberId: string, name: string) => void;
   removeMember: (tripId: string, memberId: string, force?: boolean) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
   addExpense: (tripId: string, expense: Expense) => void;
   updateExpense: (tripId: string, expense: Expense) => void;
@@ -95,6 +96,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
     api.addMember(tripId, member).catch((err) => {
       updateTrip(tripId, (t) => ({ ...t, members: t.members.filter((m) => m.id !== member.id) }));
       toast.error("Failed to add member", { description: err?.message });
+    });
+  }, []);
+
+  const updateMember = useCallback((tripId: string, memberId: string, name: string) => {
+    updateTrip(tripId, (t) => ({
+      ...t,
+      members: t.members.map((m) => (m.id === memberId ? { ...m, name } : m)),
+    }));
+
+    api.updateMember(tripId, memberId, { name }).catch((err) => {
+      refreshTrips();
+      toast.error("Failed to update member", { description: err?.message });
     });
   }, []);
 
@@ -196,7 +209,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   return (
     <TripContext.Provider
-      value={{ trips, isLoading, error, createTrip, deleteTrip, getTrip, addMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
+      value={{ trips, isLoading, error, createTrip, deleteTrip, getTrip, addMember, updateMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
     >
       {children}
     </TripContext.Provider>

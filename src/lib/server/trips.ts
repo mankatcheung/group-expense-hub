@@ -295,6 +295,27 @@ export async function addMember(
   return member;
 }
 
+export async function updateMember(
+  tripId: string,
+  memberId: string,
+  data: { name: string },
+) {
+  const session = await getSession();
+
+  const canEdit = await canEditTrip(tripId, session.user.id);
+  if (!canEdit) {
+    throw new Error("Not authorized to edit this trip");
+  }
+
+  const member = await getPrisma().member.update({
+    where: { id: memberId },
+    data: { name: data.name },
+  });
+
+  revalidatePath(`/trip/${tripId}`);
+  return member;
+}
+
 export async function removeMember(
   tripId: string,
   memberId: string,
