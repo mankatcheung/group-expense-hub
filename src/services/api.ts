@@ -16,6 +16,7 @@ import {
   joinTrip as saJoinTrip,
   getInvitations as saGetInvitations,
   acceptInvitation as saAcceptInvitation,
+  updateUserProfile as saUpdateUserProfile,
 } from "@/lib/server/trips";
 
 export const api = {
@@ -34,4 +35,5 @@ export const api = {
   joinTrip: async (token: string) => saJoinTrip(token),
   getInvitations: async () => saGetInvitations(),
   acceptInvitation: async (id: string) => saAcceptInvitation(id),
+  updateUserProfile: async (data: { name?: string; email?: string }) => saUpdateUserProfile(data),
 };

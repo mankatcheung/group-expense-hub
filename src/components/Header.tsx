@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plane } from "lucide-react";
+import { LogOut, Plane, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -38,6 +38,15 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.push("/settings")}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out

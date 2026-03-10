@@ -815,3 +815,33 @@ export async function acceptInvitation(id: string) {
   revalidatePath("/");
   return { success: true, tripId: invitation.tripId };
 }
+
+export async function updateUserProfile(data: { name?: string; email?: string }) {
+  const session = await getSession();
+  const userId = session.user.id;
+
+  if (data.name) {
+    await getPrisma().user.update({
+      where: { id: userId },
+      data: { name: data.name },
+    });
+  }
+
+  if (data.email && data.email !== session.user.email) {
+    const existingUser = await getPrisma().user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new Error("Email already in use");
+    }
+
+    await getPrisma().user.update({
+      where: { id: userId },
+      data: { email: data.email },
+    });
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}

@@ -18,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -48,6 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authClient.signOut();
   };
 
+  const refreshUser = async () => {
+    await refetch();
+  };
+
   const value: AuthContextType = {
     user: session?.user || null,
     isAuthenticated: !!session?.user,
@@ -55,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     register,
     logout,
+    refreshUser,
   };
 
   return (
