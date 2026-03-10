@@ -9,6 +9,7 @@ interface TripContextType {
   error: string | null;
   createTrip: (name: string) => Trip;
   deleteTrip: (id: string) => void;
+  updateTrip: (tripId: string, name: string) => void;
   getTrip: (id: string) => Trip | undefined;
   addMember: (tripId: string, member: Member) => void;
   updateMember: (tripId: string, memberId: string, name: string) => void;
@@ -80,36 +81,51 @@ export function TripProvider({ children }: { children: ReactNode }) {
     });
   }, [trips]);
 
+  const refreshTrips = useCallback(() => {
+    api.getTrips()
+      .then(setTrips)
+      .catch((err) => {
+        toast.error("Failed to refresh trips", { description: err?.message });
+      });
+  }, []);
+
+  const updateTrip = useCallback((tripId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    
+    // Optimistic update
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, name: trimmed } : t)));
+
+    // API call
+    api.updateTrip(tripId, { name: trimmed }).catch((err) => {
+      refreshTrips();
+      toast.error("Failed to update trip", { description: err?.message });
+    });
+  }, [refreshTrips]);
+
   const getTrip = useCallback((id: string) => {
     return trips.find((t) => t.id === id);
   }, [trips]);
 
-  const updateTrip = (tripId: string, updater: (t: Trip) => Trip) => {
-    setTrips((prev) => prev.map((t) => (t.id === tripId ? updater(t) : t)));
-  };
-
   const addMember = useCallback((tripId: string, member: Member) => {
     // Optimistic update
-    updateTrip(tripId, (t) => ({ ...t, members: [...t.members, member] }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, members: [...t.members, member] } : t)));
 
     // API call
     api.addMember(tripId, member).catch((err) => {
-      updateTrip(tripId, (t) => ({ ...t, members: t.members.filter((m) => m.id !== member.id) }));
+      setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, members: t.members.filter((m) => m.id !== member.id) } : t)));
       toast.error("Failed to add member", { description: err?.message });
     });
   }, []);
 
   const updateMember = useCallback((tripId: string, memberId: string, name: string) => {
-    updateTrip(tripId, (t) => ({
-      ...t,
-      members: t.members.map((m) => (m.id === memberId ? { ...m, name } : m)),
-    }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, members: t.members.map((m) => (m.id === memberId ? { ...m, name } : m)) } : t)));
 
     api.updateMember(tripId, memberId, { name }).catch((err) => {
       refreshTrips();
       toast.error("Failed to update member", { description: err?.message });
     });
-  }, []);
+  }, [refreshTrips]);
 
   const removeMember = useCallback(async (tripId: string, memberId: string, force: boolean = false) => {
     const response = await api.removeMember(tripId, memberId, force);
@@ -119,14 +135,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }
 
     if (response.success) {
-      updateTrip(tripId, (t) => ({
+      setTrips((prev) => prev.map((t) => (t.id === tripId ? {
         ...t,
         members: t.members.filter((m) => m.id !== memberId),
         expenses: t.expenses
           .filter((e) => e.paidBy !== memberId)
           .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== memberId) }))
           .filter((e) => e.splitAmong.length > 0),
-      }));
+      } : t)));
     }
     
     return response;
@@ -134,20 +150,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const addExpense = useCallback((tripId: string, expense: Expense) => {
     // Optimistic update
-    updateTrip(tripId, (t) => ({ ...t, expenses: [expense, ...t.expenses] }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, expenses: [expense, ...t.expenses] } : t)));
 
     // API call
     api.addExpense(tripId, expense).catch((err) => {
-      updateTrip(tripId, (t) => ({ ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) }));
+      setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) } : t)));
       toast.error("Failed to add expense", { description: err?.message });
     });
   }, []);
 
   const updateExpense = useCallback((tripId: string, expense: Expense) => {
-    updateTrip(tripId, (t) => ({
-      ...t,
-      expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)),
-    }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)) } : t)));
     api.updateExpense(tripId, expense).catch((err) => {
       refreshTrips();
       toast.error("Failed to update expense", { description: err?.message });
@@ -156,10 +169,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const removeExpense = useCallback((tripId: string, expenseId: string) => {
     // Optimistic update
-    updateTrip(tripId, (t) => ({
-      ...t,
-      expenses: t.expenses.filter((e) => e.id !== expenseId),
-    }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expenseId) } : t)));
 
     // API call
     api.removeExpense(tripId, expenseId).catch((err) => {
@@ -172,7 +182,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     const response = await api.inviteMember(tripId, email);
     
     if (response.user) {
-      updateTrip(tripId, (t) => ({
+      setTrips((prev) => prev.map((t) => (t.id === tripId ? {
         ...t,
         tripMembers: [...t.tripMembers, {
           id: crypto.randomUUID(),
@@ -181,17 +191,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
           user: response.user,
         }],
         ...(response.member ? { members: [...t.members, response.member] } : {}),
-      }));
+      } : t)));
     }
     
     return response;
   }, []);
 
   const removeCollaborator = useCallback((tripId: string, memberId: string) => {
-    updateTrip(tripId, (t) => ({
-      ...t,
-      tripMembers: t.tripMembers.filter((m) => m.id !== memberId),
-    }));
+    setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, tripMembers: t.tripMembers.filter((m) => m.id !== memberId) } : t)));
 
     api.removeCollaborator(tripId, memberId).catch((err) => {
       refreshTrips();
@@ -199,17 +206,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const refreshTrips = useCallback(() => {
-    api.getTrips()
-      .then(setTrips)
-      .catch((err) => {
-        toast.error("Failed to refresh trips", { description: err?.message });
-      });
-  }, []);
-
   return (
     <TripContext.Provider
-      value={{ trips, isLoading, error, createTrip, deleteTrip, getTrip, addMember, updateMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
+      value={{ trips, isLoading, error, createTrip, deleteTrip, updateTrip, getTrip, addMember, updateMember, removeMember, addExpense, updateExpense, removeExpense, inviteMember, removeCollaborator, refreshTrips }}
     >
       {children}
     </TripContext.Provider>

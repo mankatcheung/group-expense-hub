@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import { PageSkeleton, BalanceSkeleton, MemberBadgeSkeleton } from "@/components/Skeletons";
 import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -30,6 +31,7 @@ function TripDetailContent() {
     updateExpense,
     addMember,
     updateMember,
+    updateTrip,
     removeMember,
     inviteMember,
     removeCollaborator,
@@ -37,6 +39,8 @@ function TripDetailContent() {
   } = useTrip();
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tripName, setTripName] = useState("");
 
   const currentTab = searchParams.get("tab") || "summary";
 
@@ -47,6 +51,28 @@ function TripDetailContent() {
   };
 
   const trip = getTrip(tripId);
+
+  const handleStartEditName = () => {
+    if (trip) {
+      setTripName(trip.name);
+      setIsEditingName(true);
+    }
+  };
+
+  const handleSaveName = () => {
+    if (trip && tripName.trim()) {
+      updateTrip(trip.id, tripName.trim());
+    }
+    setIsEditingName(false);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveName();
+    } else if (e.key === "Escape") {
+      setIsEditingName(false);
+    }
+  };
 
   if (isLoading) {
     return <PageSkeleton />;
@@ -114,9 +140,26 @@ function TripDetailContent() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight">
-            {trip.name}
-          </h1>
+          {isEditingName ? (
+            <div className="flex items-center justify-center gap-2">
+              <Input
+                value={tripName}
+                onChange={(e) => setTripName(e.target.value)}
+                onKeyDown={handleNameKeyDown}
+                onBlur={handleSaveName}
+                className="text-center max-w-[200px] font-display font-bold text-2xl"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <h1 
+              className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={handleStartEditName}
+              title="Click to edit"
+            >
+              {trip.name}
+            </h1>
+          )}
           <p className="mt-1 text-sm text-muted-foreground">
             {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} ·{" "}
             {trip.expenses?.length} expense
