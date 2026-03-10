@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { TripProvider } from "@/context/TripContext";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import "@/index.css";
 
 export default function RootLayout({
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <ServiceWorkerRegistration />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
