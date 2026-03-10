@@ -1,5 +1,5 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const APP_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+const APP_URL = process.env.VERCEL_URL || "http://localhost:3000";
 const SENDER_EMAIL =
   process.env.BREVO_SENDER_EMAIL || "noreply@group-expense-hub.com";
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || "Group Expense Hub";

@@ -15,6 +15,7 @@ A modern web application for splitting group travel expenses with friends. No mo
 ## Tech Stack
 
 ### Frontend
+
 - **Next.js 16** - React framework with App Router
 - **React 19** - UI library
 - **TypeScript** - Type-safe development
@@ -28,6 +29,7 @@ A modern web application for splitting group travel expenses with friends. No mo
 - **Tanstack React Query** - Data fetching (configured)
 
 ### Backend
+
 - **Next.js API Routes / Server Actions** - Backend API
 - **Better-Auth** - Authentication framework
 - **Prisma** - ORM with Prisma Client
@@ -35,6 +37,7 @@ A modern web application for splitting group travel expenses with friends. No mo
 - **Zod** - Schema validation
 
 ### Development
+
 - **Vite** - Build tool (test runner)
 - **Vitest** - Testing framework
 - **ESLint** - Code linting
@@ -89,7 +92,6 @@ TURSO_DATABASE_URL=file:./dev.db
 TURSO_AUTH_TOKEN=
 
 # Better Auth
-BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your-secret-key-here
 ```
 
