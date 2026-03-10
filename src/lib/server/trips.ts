@@ -845,3 +845,17 @@ export async function updateUserProfile(data: { name?: string; email?: string })
   revalidatePath("/");
   return { success: true };
 }
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const session = await getSession();
+
+  await auth.api.changePassword({
+    body: {
+      currentPassword,
+      newPassword,
+    },
+    headers: await cookies() as any,
+  });
+
+  return { success: true };
+}
