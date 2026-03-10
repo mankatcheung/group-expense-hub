@@ -14,7 +14,7 @@ const prisma = new PrismaClient({ adapter });
 
 export const auth = betterAuth({
   plugins: [nextCookies()],
-  baseURL: process.env.VERCEL_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
@@ -37,7 +37,7 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: ["localhost:*", process.env.VERCEL_URL].filter(
+  trustedOrigins: ["localhost:*", process.env.BETTER_AUTH_URL].filter(
     (origin): origin is string => Boolean(origin),
   ),
 });
