@@ -23,6 +23,7 @@ const getPrisma = () => {
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { sendTripInvitationEmail, sendTripAddedNotification, getAppUrl } from "@/lib/email";
 
 async function getSession() {
   const cookieStore = await cookies();
@@ -556,6 +557,14 @@ export async function inviteMember(tripId: string, email: string) {
       },
     });
 
+    const inviteUrl = `${getAppUrl()}/join/${token}`;
+    await sendTripInvitationEmail({
+      to: email,
+      inviterName,
+      tripName: trip.name,
+      inviteUrl,
+    });
+
     return {
       success: true,
       message: "Invitation sent to " + email,
@@ -597,6 +606,14 @@ export async function inviteMember(tripId: string, email: string) {
       },
     }),
   ]);
+
+  await sendTripAddedNotification({
+    to: user.email,
+    name: user.name,
+    inviterName,
+    tripName: trip.name,
+    tripUrl: `${getAppUrl()}/trip/${tripId}`,
+  });
 
   revalidatePath(`/trip/${tripId}`);
   return {
@@ -816,7 +833,10 @@ export async function acceptInvitation(id: string) {
   return { success: true, tripId: invitation.tripId };
 }
 
-export async function updateUserProfile(data: { name?: string; email?: string }) {
+export async function updateUserProfile(data: {
+  name?: string;
+  email?: string;
+}) {
   const session = await getSession();
   const userId = session.user.id;
 
@@ -846,7 +866,10 @@ export async function updateUserProfile(data: { name?: string; email?: string })
   return { success: true };
 }
 
-export async function changePassword(currentPassword: string, newPassword: string) {
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+) {
   const session = await getSession();
 
   await auth.api.changePassword({
@@ -854,7 +877,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
       currentPassword,
       newPassword,
     },
-    headers: await cookies() as any,
+    headers: (await cookies()) as any,
   });
 
   return { success: true };

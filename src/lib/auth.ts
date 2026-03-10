@@ -4,6 +4,7 @@ import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 
 import { nextCookies } from "better-auth/next-js";
+import { sendPasswordResetEmail } from "./email";
 
 const adapter = new PrismaLibSql({
   url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
@@ -20,6 +21,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    async sendResetPassword({ user, url }) {
+      await sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        resetUrl: url,
+      });
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7,
