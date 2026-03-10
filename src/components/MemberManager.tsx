@@ -40,15 +40,28 @@ interface Props {
 
 export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Props) {
   const [name, setName] = useState("");
+  const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editError, setEditError] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<MemberWithExpenses | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
+  const isNameTaken = (nameToCheck: string, excludeId?: string) => {
+    return members.some(
+      (m) => m.id !== excludeId && m.name.toLowerCase() === nameToCheck.toLowerCase()
+    );
+  };
+
   const handleAdd = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (isNameTaken(trimmed)) {
+      setError("A member with this name already exists");
+      return;
+    }
+    setError("");
     onAdd({
       id: crypto.randomUUID(),
       name: trimmed,
@@ -96,13 +109,23 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
   const handleEditClick = (member: Member) => {
     setEditingId(member.id);
     setEditValue(member.name);
+    setEditError("");
   };
 
   const handleEditSave = (memberId: string) => {
     const trimmed = editValue.trim();
-    if (trimmed) {
-      onUpdate(memberId, trimmed);
+    if (!trimmed) {
+      setEditingId(null);
+      setEditValue("");
+      setEditError("");
+      return;
     }
+    if (isNameTaken(trimmed, memberId)) {
+      setEditError("A member with this name already exists");
+      return;
+    }
+    setEditError("");
+    onUpdate(memberId, trimmed);
     setEditingId(null);
     setEditValue("");
   };
@@ -110,6 +133,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
   const handleEditCancel = () => {
     setEditingId(null);
     setEditValue("");
+    setEditError("");
   };
 
   const handleEditKeyDown = (e: React.KeyboardEvent, memberId: string) => {
@@ -123,17 +147,23 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-display font-semibold text-foreground">Trip Members</h2>
-      <div className="flex gap-2">
-        <Input
-          placeholder="Add a friend..."
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          className="flex-1"
-        />
-        <Button onClick={handleAdd} size="icon" className="shrink-0">
-          <UserPlus className="h-4 w-4" />
-        </Button>
+      <div className="space-y-1">
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add a friend..."
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError("");
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            className="flex-1"
+          />
+          <Button onClick={handleAdd} size="icon" className="shrink-0">
+            <UserPlus className="h-4 w-4" />
+          </Button>
+        </div>
+        {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
         {members.map((m) => (
@@ -147,14 +177,22 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
               style={{ backgroundColor: m.color }}
             />
             {editingId === m.id ? (
-              <Input
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => handleEditKeyDown(e, m.id)}
-                onBlur={() => handleEditSave(m.id)}
-                className="h-5 w-20 py-0 px-1 text-xs bg-background/50 border-input"
-                autoFocus
-              />
+              <div className="flex items-center gap-1">
+                <Input
+                  value={editValue}
+                  onChange={(e) => {
+                    setEditValue(e.target.value);
+                    setEditError("");
+                  }}
+                  onKeyDown={(e) => handleEditKeyDown(e, m.id)}
+                  onBlur={() => handleEditSave(m.id)}
+                  className="h-5 w-20 py-0 px-1 text-xs bg-background/50 border-input"
+                  autoFocus
+                />
+                {editError && (
+                  <span className="text-xs text-destructive whitespace-nowrap">{editError}</span>
+                )}
+              </div>
             ) : (
               <span className="max-w-[100px] truncate">{m.name}</span>
             )}

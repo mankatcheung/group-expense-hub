@@ -686,6 +686,17 @@ export async function joinTrip(token: string) {
     where: { id: userId },
   });
 
+  const tripMembers = await getPrisma().member.findMany({
+    where: { tripId: invitation.tripId },
+    select: { name: true },
+  });
+
+  const existingNames = new Set(tripMembers.map((m) => m.name.toLowerCase()));
+  const proposedName = user?.name || user?.email.split("@")[0] || "User";
+  const memberName = existingNames.has(proposedName.toLowerCase())
+    ? user?.email.split("@")[0] || "User"
+    : proposedName;
+
   await getPrisma().$transaction([
     getPrisma().tripMember.create({
       data: {
@@ -697,7 +708,7 @@ export async function joinTrip(token: string) {
     getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
-        name: user?.name || user?.email.split("@")[0] || "User",
+        name: memberName,
         color: getRandomColor(),
         tripId: invitation.tripId,
       },
