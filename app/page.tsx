@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
+import { TripCardSkeleton, InvitationSkeleton } from "@/components/Skeletons";
 import { Plus, Trash2, ChevronRight, MapPin, Mail, Check, Loader2, Plane, AlertCircle } from "lucide-react";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { api } from "@/services/api";
@@ -152,14 +153,7 @@ function IndexContent() {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-                    <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-[140px]" />
-                      <Skeleton className="h-3 w-[200px]" />
-                    </div>
-                    <Skeleton className="h-4 w-4 rounded shrink-0" />
-                  </div>
+                  <TripCardSkeleton key={i} />
                 ))}
               </div>
             ) : error ? (
@@ -226,8 +220,10 @@ function IndexContent() {
 
           <TabsContent value="invitations">
             {loadingInvitations ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <InvitationSkeleton key={i} />
+                ))}
               </div>
             ) : invitations.length > 0 ? (
               <div className="space-y-3">

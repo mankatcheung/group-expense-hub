@@ -11,11 +11,11 @@ import BalanceSummary from "@/components/BalanceSummary";
 import MemberManager from "@/components/MemberManager";
 import InviteMemberDialog from "@/components/InviteMemberDialog";
 import Header from "@/components/Header";
+import { PageSkeleton, BalanceSkeleton, MemberBadgeSkeleton } from "@/components/Skeletons";
 import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function TripDetailContent() {
   const params = useParams();
@@ -49,27 +49,7 @@ function TripDetailContent() {
   const trip = getTrip(tripId);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header showBackButton onBack={() => router.push("/")} />
-        <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
-          <div className="mb-6">
-            <Skeleton className="h-8 w-24" />
-          </div>
-          <div className="mb-8 text-center space-y-4">
-            <Skeleton className="h-14 w-14 rounded-2xl mx-auto" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-4 w-32 mx-auto" />
-          </div>
-          <Skeleton className="h-10 w-full rounded-lg mb-6" />
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (error) {

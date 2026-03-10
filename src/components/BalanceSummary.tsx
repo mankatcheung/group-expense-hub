@@ -6,10 +6,30 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 interface Props {
   balances: Balance[];
   members: Member[];
+  isLoading?: boolean;
 }
 
-export default function BalanceSummary({ balances, members }: Props) {
+export default function BalanceSummary({ balances, members, isLoading }: Props) {
   const getMember = (id: string) => members.find((m) => m.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-display font-semibold text-foreground">Who Owes Who</h2>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+              <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+              <div className="ml-auto h-5 w-16 rounded bg-muted animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

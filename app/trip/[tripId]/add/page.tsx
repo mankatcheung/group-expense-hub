@@ -6,9 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useTrip } from "@/context/TripContext";
 import AddExpense from "@/components/AddExpense";
 import Header from "@/components/Header";
+import { PageSkeleton, FormSkeleton } from "@/components/Skeletons";
 import { Plane, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AddExpensePage() {
   const params = useParams();
@@ -22,17 +22,14 @@ export default function AddExpensePage() {
     return (
       <div className="min-h-screen bg-background">
         <Header showBackButton onBack={() => router.push(`/trip/${tripId}`)} />
-        <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
-          <div className="mb-8 text-center space-y-4">
-            <Skeleton className="h-14 w-14 rounded-2xl mx-auto" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-4 w-40 mx-auto" />
+        <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="h-14 w-14 rounded-2xl mx-auto bg-muted animate-pulse" />
+            <div className="h-8 w-48 mx-auto rounded bg-muted animate-pulse" />
+            <div className="h-4 w-40 mx-auto rounded bg-muted animate-pulse" />
           </div>
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-32" />
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <FormSkeleton />
           </div>
         </div>
       </div>
