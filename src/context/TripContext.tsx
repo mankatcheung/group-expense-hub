@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Member, Expense, Trip, TripUser } from '@/lib/types';
 import { api } from '@/services/api';
 import { handleApiError, handleApiSuccess } from '@/lib/error-handler';
@@ -14,6 +15,8 @@ export interface InviteMemberResponse {
     color: string;
   };
 }
+
+const TRIPS_KEY = ['trips'];
 
 interface TripContextType {
   trips: Trip[];
@@ -41,88 +44,152 @@ interface TripContextType {
 const TripContext = createContext<TripContextType | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  // Load trips from API on mount
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    api
-      .getTrips()
-      .then(setTrips)
-      .catch((err) => {
-        const message = err?.message || 'Failed to load trips';
-        setError(message);
-        handleApiError(err, 'Failed to load trips');
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+  const { data: trips = [], isLoading, error } = useQuery({
+    queryKey: TRIPS_KEY,
+    queryFn: () => api.getTrips(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  });
 
-  const createTrip = useCallback((name: string) => {
-    const trip: Trip = {
-      id: crypto.randomUUID(),
-      name,
-      members: [],
-      tripMembers: [],
-      expenses: [],
-      createdAt: new Date().toISOString(),
-      isOwner: true,
-      owner: null,
-    };
+  const createTripMutation = useMutation({
+    mutationFn: (name: string) => api.createTrip({ id: crypto.randomUUID(), name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
 
-    // Optimistic update
-    setTrips((prev) => [trip, ...prev]);
+  const deleteTripMutation = useMutation({
+    mutationFn: (id: string) => api.deleteTrip(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
 
-    // API call
-    api.createTrip(trip).catch((err) => {
-      setTrips((prev) => prev.filter((t) => t.id !== trip.id));
-      handleApiError(err, 'Failed to create trip');
-    });
+  const updateTripMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => api.updateTrip(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
 
-    return trip;
-  }, []);
+  const addMemberMutation = useMutation({
+    mutationFn: ({ tripId, member }: { tripId: string; member: { id: string; name: string; color: string } }) =>
+      api.addMember(tripId, member),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ tripId, memberId, name }: { tripId: string; memberId: string; name: string }) =>
+      api.updateMember(tripId, memberId, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ tripId, memberId, force }: { tripId: string; memberId: string; force?: boolean }) =>
+      api.removeMember(tripId, memberId, force),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const addExpenseMutation = useMutation({
+    mutationFn: ({ tripId, expense }: { tripId: string; expense: Expense }) =>
+      api.addExpense(tripId, expense),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const updateExpenseMutation = useMutation({
+    mutationFn: ({ tripId, expense }: { tripId: string; expense: Expense }) =>
+      api.updateExpense(tripId, expense),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const removeExpenseMutation = useMutation({
+    mutationFn: ({ tripId, expenseId }: { tripId: string; expenseId: string }) =>
+      api.removeExpense(tripId, expenseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const inviteMemberMutation = useMutation({
+    mutationFn: ({ tripId, email }: { tripId: string; email: string }) =>
+      api.inviteMember(tripId, email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const removeCollaboratorMutation = useMutation({
+    mutationFn: ({ tripId, memberId }: { tripId: string; memberId: string }) =>
+      api.removeCollaborator(tripId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+    },
+  });
+
+  const createTrip = useCallback(
+    (name: string) => {
+      const trip: Trip = {
+        id: crypto.randomUUID(),
+        name,
+        members: [],
+        tripMembers: [],
+        expenses: [],
+        createdAt: new Date().toISOString(),
+        isOwner: true,
+        owner: null,
+      };
+
+      setTrips((prev) => [trip, ...prev]);
+      createTripMutation.mutate(name);
+
+      return trip;
+    },
+    [createTripMutation]
+  );
 
   const deleteTrip = useCallback(
     (id: string) => {
       const previousTrips = trips;
-      // Optimistic update
       setTrips((prev) => prev.filter((t) => t.id !== id));
 
-      // API call
-      api.deleteTrip(id).catch((err) => {
-        setTrips(previousTrips);
-        handleApiError(err, 'Failed to delete trip');
+      deleteTripMutation.mutate(id, {
+        onError: () => {
+          setTrips(previousTrips);
+        },
       });
     },
-    [trips]
+    [trips, deleteTripMutation]
   );
-
-  const refreshTrips = useCallback(() => {
-    api
-      .getTrips()
-      .then(setTrips)
-      .catch((err) => {
-        handleApiError(err, 'Failed to refresh trips');
-      });
-  }, []);
 
   const updateTrip = useCallback(
     (tripId: string, name: string) => {
       const trimmed = name.trim();
       if (!trimmed) return;
 
-      // Optimistic update
       setTrips((prev) => prev.map((t) => (t.id === tripId ? { ...t, name: trimmed } : t)));
 
-      // API call
-      api.updateTrip(tripId, { name: trimmed }).catch((err) => {
-        refreshTrips();
-        handleApiError(err, 'Failed to update trip');
-      });
+      updateTripMutation.mutate(
+        { id: tripId, name: trimmed },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+          },
+        }
+      );
     },
-    [refreshTrips]
+    [updateTripMutation, queryClient]
   );
 
   const getTrip = useCallback(
@@ -132,22 +199,27 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [trips]
   );
 
-  const addMember = useCallback((tripId: string, member: Member) => {
-    // Optimistic update
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, members: [...t.members, member] } : t))
-    );
-
-    // API call
-    api.addMember(tripId, member).catch((err) => {
+  const addMember = useCallback(
+    (tripId: string, member: Member) => {
       setTrips((prev) =>
-        prev.map((t) =>
-          t.id === tripId ? { ...t, members: t.members.filter((m) => m.id !== member.id) } : t
-        )
+        prev.map((t) => (t.id === tripId ? { ...t, members: [...t.members, member] } : t))
       );
-      handleApiError(err, 'Failed to add member');
-    });
-  }, []);
+
+      addMemberMutation.mutate(
+        { tripId, member },
+        {
+          onError: () => {
+            setTrips((prev) =>
+              prev.map((t) =>
+                t.id === tripId ? { ...t, members: t.members.filter((m) => m.id !== member.id) } : t
+              )
+            );
+          },
+        }
+      );
+    },
+    [addMemberMutation]
+  );
 
   const updateMember = useCallback(
     (tripId: string, memberId: string, name: string) => {
@@ -159,137 +231,132 @@ export function TripProvider({ children }: { children: ReactNode }) {
         )
       );
 
-      api.updateMember(tripId, memberId, { name }).catch((err) => {
-        refreshTrips();
-        handleApiError(err, 'Failed to update member');
-      });
+      updateMemberMutation.mutate(
+        { tripId, memberId, name },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+          },
+        }
+      );
     },
-    [refreshTrips]
+    [updateMemberMutation, queryClient]
   );
 
   const removeMember = useCallback(
-    async (tripId: string, memberId: string, force: boolean = false) => {
-      const response = await api.removeMember(tripId, memberId, force);
-
-      if (response.error && response.expenseCount) {
-        return response;
-      }
-
-      if (response.success) {
-        setTrips((prev) =>
-          prev.map((t) =>
-            t.id === tripId
-              ? {
-                  ...t,
-                  members: t.members.filter((m) => m.id !== memberId),
-                  expenses: t.expenses
-                    .filter((e) => e.paidBy !== memberId)
-                    .map((e) => ({ ...e, splitAmong: e.splitAmong.filter((x) => x !== memberId) }))
-                    .filter((e) => e.splitAmong.length > 0),
-                }
-              : t
-          )
-        );
-      }
-
+    async (tripId: string, memberId: string, force = false) => {
+      const response = await removeMemberMutation.mutateAsync({ tripId, memberId, force });
       return response;
     },
-    []
+    [removeMemberMutation]
   );
 
-  const addExpense = useCallback((tripId: string, expense: Expense) => {
-    // Optimistic update
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, expenses: [expense, ...t.expenses] } : t))
-    );
-
-    // API call
-    api.addExpense(tripId, expense).catch((err) => {
+  const addExpense = useCallback(
+    (tripId: string, expense: Expense) => {
       setTrips((prev) =>
-        prev.map((t) =>
-          t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) } : t
-        )
+        prev.map((t) => (t.id === tripId ? { ...t, expenses: [expense, ...t.expenses] } : t))
       );
-      handleApiError(err, 'Failed to add expense');
-    });
-  }, []);
 
-  const updateExpense = useCallback((tripId: string, expense: Expense) => {
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === tripId
-          ? { ...t, expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)) }
-          : t
-      )
-    );
-    api.updateExpense(tripId, expense).catch((err) => {
-      refreshTrips();
-      handleApiError(err, 'Failed to update expense');
-    });
-  }, []);
+      addExpenseMutation.mutate(
+        { tripId, expense },
+        {
+          onError: () => {
+            setTrips((prev) =>
+              prev.map((t) =>
+                t.id === tripId
+                  ? { ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) }
+                  : t
+              )
+            );
+          },
+        }
+      );
+    },
+    [addExpenseMutation]
+  );
 
-  const removeExpense = useCallback((tripId: string, expenseId: string) => {
-    // Optimistic update
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expenseId) } : t
-      )
-    );
-
-    // API call
-    api.removeExpense(tripId, expenseId).catch((err) => {
-      refreshTrips();
-      handleApiError(err, 'Failed to remove expense');
-    });
-  }, []);
-
-  const inviteMember = useCallback(async (tripId: string, email: string) => {
-    const response = await api.inviteMember(tripId, email);
-
-    if (response.user) {
+  const updateExpense = useCallback(
+    (tripId: string, expense: Expense) => {
       setTrips((prev) =>
         prev.map((t) =>
           t.id === tripId
-            ? {
-                ...t,
-                tripMembers: [
-                  ...t.tripMembers,
-                  {
-                    id: crypto.randomUUID(),
-                    userId: response.user.id,
-                    role: 'collaborator',
-                    user: response.user,
-                  },
-                ],
-                ...(response.member ? { members: [...t.members, response.member] } : {}),
-              }
+            ? { ...t, expenses: t.expenses.map((e) => (e.id === expense.id ? expense : e)) }
             : t
         )
       );
-    }
 
-    return response;
-  }, []);
+      updateExpenseMutation.mutate(
+        { tripId, expense },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+          },
+        }
+      );
+    },
+    [updateExpenseMutation, queryClient]
+  );
 
-  const removeCollaborator = useCallback((tripId: string, memberId: string) => {
-    setTrips((prev) =>
-      prev.map((t) =>
-        t.id === tripId ? { ...t, tripMembers: t.tripMembers.filter((m) => m.id !== memberId) } : t
-      )
-    );
+  const removeExpense = useCallback(
+    (tripId: string, expenseId: string) => {
+      setTrips((prev) =>
+        prev.map((t) => (t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expenseId) } : t))
+      );
 
-    api.removeCollaborator(tripId, memberId).catch((err) => {
-      refreshTrips();
-      handleApiError(err, 'Failed to remove collaborator');
-    });
-  }, []);
+      removeExpenseMutation.mutate(
+        { tripId, expenseId },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+          },
+        }
+      );
+    },
+    [removeExpenseMutation, queryClient]
+  );
+
+  const inviteMember = useCallback(
+    async (tripId: string, email: string) => {
+      const response = await inviteMemberMutation.mutateAsync({ tripId, email });
+      return response;
+    },
+    [inviteMemberMutation]
+  );
+
+  const removeCollaborator = useCallback(
+    (tripId: string, memberId: string) => {
+      setTrips((prev) =>
+        prev.map((t) =>
+          t.id === tripId ? { ...t, tripMembers: t.tripMembers.filter((m) => m.id !== memberId) } : t
+        )
+      );
+
+      removeCollaboratorMutation.mutate(
+        { tripId, memberId },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+          },
+        }
+      );
+    },
+    [removeCollaboratorMutation, queryClient]
+  );
+
+  const refreshTrips = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
+  }, [queryClient]);
+
+  const setTrips = (updater: Trip[] | ((prev: Trip[]) => Trip[])) => {
+    queryClient.setQueryData(TRIPS_KEY, updater);
+  };
 
   return (
     <TripContext.Provider
       value={{
         trips,
         isLoading,
-        error,
+        error: error?.message || null,
         createTrip,
         deleteTrip,
         updateTrip,
