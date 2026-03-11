@@ -162,8 +162,9 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             className="flex-1"
+            aria-label="Member name"
           />
-          <Button onClick={handleAdd} size="icon" className="shrink-0">
+          <Button onClick={handleAdd} size="icon" className="shrink-0" aria-label="Add member">
             <UserPlus className="h-4 w-4" />
           </Button>
         </div>

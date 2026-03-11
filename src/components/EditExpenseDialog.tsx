@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Expense, Member } from '@/lib/types';
 import { CURRENCIES } from '@/lib/currencies';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,19 @@ export default function EditExpenseDialog({ expense, members, open, onOpenChange
   const [paidBy, setPaidBy] = useState(expense.paidBy);
   const [splitAmong, setSplitAmong] = useState<string[]>(expense.splitAmong);
   const [date, setDate] = useState<Date>(parseISO(expense.date));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setDescription(expense.description);
+      setAmount(expense.amount.toString());
+      setCurrency(expense.currency);
+      setPaidBy(expense.paidBy);
+      setSplitAmong(expense.splitAmong);
+      setDate(parseISO(expense.date));
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open, expense]);
 
   const toggleSplit = (id: string) => {
     setSplitAmong((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -69,9 +82,11 @@ export default function EditExpenseDialog({ expense, members, open, onOpenChange
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
+              ref={inputRef}
               placeholder="What was it for?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              aria-label="Expense description"
             />
             <div className="flex gap-2">
               <Input
@@ -82,9 +97,10 @@ export default function EditExpenseDialog({ expense, members, open, onOpenChange
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="flex-1"
+                aria-label="Expense amount"
               />
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-24">
+                <SelectTrigger className="w-24" aria-label="Select currency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -105,8 +121,9 @@ export default function EditExpenseDialog({ expense, members, open, onOpenChange
                 <Button
                   variant="outline"
                   className={cn('w-full justify-start text-left font-normal')}
+                  aria-label="Select expense date"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                   {format(date, 'PPP')}
                 </Button>
               </PopoverTrigger>
@@ -125,7 +142,7 @@ export default function EditExpenseDialog({ expense, members, open, onOpenChange
           <div>
             <Label className="text-sm text-muted-foreground mb-2 block">Paid by</Label>
             <Select value={paidBy} onValueChange={setPaidBy}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Select who paid">
                 <SelectValue placeholder="Who paid?" />
               </SelectTrigger>
               <SelectContent>

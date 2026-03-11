@@ -75,14 +75,16 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         <button
           onClick={() => setEditingExpense(e)}
           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1 rounded"
+          aria-label={`Edit expense: ${e.description}`}
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => onRemove(e.id)}
           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded"
+          aria-label={`Delete expense: ${e.description}`}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     );
@@ -100,8 +102,10 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
             size="sm"
             onClick={() => setViewMode('date')}
             className="gap-1"
+            aria-label="View expenses by date"
+            aria-pressed={viewMode === 'date'}
           >
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">By Date</span>
           </Button>
           <Button
@@ -109,8 +113,10 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
             size="sm"
             onClick={() => setViewMode('list')}
             className="gap-1"
+            aria-label="View expenses as list"
+            aria-pressed={viewMode === 'list'}
           >
-            <List className="h-4 w-4" />
+            <List className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">List</span>
           </Button>
         </div>

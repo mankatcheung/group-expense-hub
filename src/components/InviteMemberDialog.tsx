@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +22,13 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open]);
 
   const handleInvite = async () => {
     if (!email.trim()) return;
@@ -73,6 +80,7 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                ref={inputRef}
                 type="email"
                 placeholder="colleague@example.com"
                 value={email}
@@ -80,6 +88,7 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
                 onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
                 className="pl-10"
                 disabled={loading}
+                aria-label="Email address"
               />
             </div>
           </div>

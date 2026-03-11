@@ -75,6 +75,7 @@ export default function AddExpense({ members, onAdd }: Props) {
           placeholder="What was it for?"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          aria-label="Expense description"
         />
         <div className="flex gap-2">
           <Input
@@ -85,9 +86,10 @@ export default function AddExpense({ members, onAdd }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="flex-1"
+            aria-label="Expense amount"
           />
           <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger className="w-24">
+            <SelectTrigger className="w-24" aria-label="Select currency">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -111,8 +113,9 @@ export default function AddExpense({ members, onAdd }: Props) {
                 'w-full justify-start text-left font-normal',
                 !date && 'text-muted-foreground'
               )}
+              aria-label="Select expense date"
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
               {format(date, 'PPP')}
             </Button>
           </PopoverTrigger>
@@ -131,7 +134,7 @@ export default function AddExpense({ members, onAdd }: Props) {
       <div>
         <Label className="text-sm text-muted-foreground mb-2 block">Paid by</Label>
         <Select value={paidBy} onValueChange={setPaidBy}>
-          <SelectTrigger>
+          <SelectTrigger aria-label="Select who paid">
             <SelectValue placeholder="Who paid?" />
           </SelectTrigger>
           <SelectContent>

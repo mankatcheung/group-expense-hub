@@ -33,8 +33,14 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
       <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {showBackButton && (
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
-              ←
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="text-muted-foreground"
+              aria-label="Go back"
+            >
+              <span aria-hidden="true">←</span>
             </Button>
           )}
           <div className="flex items-center gap-2">
@@ -46,8 +52,14 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <User className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              aria-label="User menu"
+            >
+              <User className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">User menu</span>
               {user?.name || user?.email?.split('@')[0]}
             </Button>
           </DropdownMenuTrigger>
