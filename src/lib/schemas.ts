@@ -24,7 +24,7 @@ export const BalanceSchema = z.object({
 });
 
 export const TripUserSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().max(100).nullable(),
   email: z.string().email(),
   image: z.string().url().nullable(),
