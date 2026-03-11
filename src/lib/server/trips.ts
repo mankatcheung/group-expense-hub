@@ -392,24 +392,22 @@ export async function removeMember(tripId: string, memberId: string, force: bool
     throw new Error('Member not found');
   }
 
-  const expensesWithMember = await getPrisma().expense.findMany({
+  const expenseCount = await getPrisma().expense.count({
     where: {
       tripId,
       OR: [{ paidById: memberId }, { splits: { some: { memberId } } }],
     },
   });
 
-  const hasExpenses = expensesWithMember.length > 0;
-
-  if (hasExpenses && !force) {
+  if (expenseCount > 0 && !force) {
     return {
       error: 'Member has expenses',
-      expenseCount: expensesWithMember.length,
+      expenseCount,
       memberName: member.name,
     };
   }
 
-  if (hasExpenses && force) {
+  if (expenseCount > 0 && force) {
     await getPrisma().$transaction([
       getPrisma().expenseSplit.deleteMany({
         where: { memberId },
@@ -417,7 +415,7 @@ export async function removeMember(tripId: string, memberId: string, force: bool
       getPrisma().expense.deleteMany({
         where: {
           tripId,
-          OR: [{ paidById: memberId }, { id: { in: expensesWithMember.map((e) => e.id) } }],
+          OR: [{ paidById: memberId }, { splits: { some: { memberId } } }],
         },
       }),
       getPrisma().member.delete({
@@ -562,7 +560,7 @@ export async function inviteMember(tripId: string, email: string) {
 
   const trip = await getPrisma().trip.findUnique({
     where: { id: tripId },
-    include: { user: true },
+    select: { name: true, user: { select: { name: true, email: true } } },
   });
 
   if (!trip) {
@@ -701,7 +699,7 @@ export async function removeCollaborator(tripId: string, memberId: string) {
 
   const tripMember = await getPrisma().tripMember.findUnique({
     where: { id: memberId },
-    include: { user: true },
+    select: { user: { select: { name: true, email: true } } },
   });
 
   if (!tripMember) {
@@ -730,6 +728,7 @@ export async function joinTrip(token: string) {
 
   const invitation = await getPrisma().tripInvitation.findUnique({
     where: { token },
+    select: { id: true, tripId: true, status: true, expiresAt: true, role: true },
   });
 
   if (!invitation) {
@@ -759,6 +758,7 @@ export async function joinTrip(token: string) {
 
   const user = await getPrisma().user.findUnique({
     where: { id: userId },
+    select: { name: true, email: true },
   });
 
   const tripMembers = await getPrisma().member.findMany({
@@ -806,9 +806,14 @@ export async function getInvitations() {
       status: 'pending',
       expiresAt: { gt: new Date() },
     },
-    include: {
+    select: {
+      id: true,
+      token: true,
+      tripId: true,
+      createdAt: true,
       trip: {
-        include: {
+        select: {
+          name: true,
           user: {
             select: { id: true, name: true, email: true, image: true },
           },
@@ -833,6 +838,7 @@ export async function acceptInvitation(id: string) {
 
   const invitation = await getPrisma().tripInvitation.findUnique({
     where: { id },
+    select: { id: true, tripId: true, email: true, role: true, expiresAt: true, status: true },
   });
 
   if (!invitation) {
