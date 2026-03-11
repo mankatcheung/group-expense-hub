@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useState, Suspense } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useTrip } from "@/context/TripContext";
-import { calculateBalances } from "@/lib/balances";
-import ExpenseList from "@/components/ExpenseList";
-import BalanceSummary from "@/components/BalanceSummary";
-import MemberManager from "@/components/MemberManager";
-import InviteMemberDialog from "@/components/InviteMemberDialog";
-import Header from "@/components/Header";
-import { PageSkeleton, BalanceSkeleton, MemberBadgeSkeleton } from "@/components/Skeletons";
-import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useTrip } from '@/context/TripContext';
+import { calculateBalances } from '@/lib/balances';
+import ExpenseList from '@/components/ExpenseList';
+import BalanceSummary from '@/components/BalanceSummary';
+import MemberManager from '@/components/MemberManager';
+import InviteMemberDialog from '@/components/InviteMemberDialog';
+import Header from '@/components/Header';
+import { PageSkeleton, BalanceSkeleton, MemberBadgeSkeleton } from '@/components/Skeletons';
+import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function TripDetailContent() {
   const params = useParams();
@@ -40,13 +40,13 @@ function TripDetailContent() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [tripName, setTripName] = useState("");
+  const [tripName, setTripName] = useState('');
 
-  const currentTab = searchParams.get("tab") || "summary";
+  const currentTab = searchParams.get('tab') || 'summary';
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", value);
+    params.set('tab', value);
     router.push(`?${params.toString()}`);
   };
 
@@ -67,9 +67,9 @@ function TripDetailContent() {
   };
 
   const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleSaveName();
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setIsEditingName(false);
     }
   };
@@ -81,7 +81,7 @@ function TripDetailContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showBackButton onBack={() => router.push("/")} />
+        <Header showBackButton onBack={() => router.push('/')} />
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
           <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
@@ -91,7 +91,7 @@ function TripDetailContent() {
               <Button variant="outline" size="sm" onClick={refreshTrips}>
                 Try Again
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push("/")}>
+              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 Go Home
               </Button>
             </div>
@@ -106,7 +106,7 @@ function TripDetailContent() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Trip not found</p>
-          <Button variant="outline" onClick={() => router.push("/")}>
+          <Button variant="outline" onClick={() => router.push('/')}>
             Go Home
           </Button>
         </div>
@@ -122,13 +122,13 @@ function TripDetailContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBackButton onBack={() => router.push("/")} />
+      <Header showBackButton onBack={() => router.push('/')} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-6">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/")}
+            onClick={() => router.push('/')}
             className="gap-2 text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -152,7 +152,7 @@ function TripDetailContent() {
               />
             </div>
           ) : (
-            <h1 
+            <h1
               className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
               onClick={handleStartEditName}
               title="Click to edit"
@@ -161,9 +161,9 @@ function TripDetailContent() {
             </h1>
           )}
           <p className="mt-1 text-sm text-muted-foreground">
-            {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} ·{" "}
+            {trip.members.length} member{trip.members.length !== 1 ? 's' : ''} ·{' '}
             {trip.expenses?.length} expense
-            {trip.expenses?.length !== 1 ? "s" : ""}
+            {trip.expenses?.length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -200,11 +200,7 @@ function TripDetailContent() {
                   Collaborators
                 </h3>
                 {trip.isOwner && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInviteOpen(true)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
                     <Plus className="h-4 w-4 mr-1" />
                     Invite
                   </Button>
@@ -215,7 +211,7 @@ function TripDetailContent() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={trip.owner?.image || undefined} />
                   <AvatarFallback className="text-xs">
-                    {trip.owner?.name?.[0] || trip.owner?.email?.[0] || "?"}
+                    {trip.owner?.name?.[0] || trip.owner?.email?.[0] || '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -229,23 +225,18 @@ function TripDetailContent() {
 
               {trip.tripMembers?.length > 0 ? (
                 trip.tripMembers?.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-2 rounded-lg"
-                  >
+                  <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={member.user.image || undefined} />
                       <AvatarFallback className="text-xs">
-                        {member.user.name?.[0] || member.user.email?.[0] || "?"}
+                        {member.user.name?.[0] || member.user.email?.[0] || '?'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
                         {member.user.name || member.user.email}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Collaborator
-                      </p>
+                      <p className="text-xs text-muted-foreground">Collaborator</p>
                     </div>
                     {trip.isOwner && (
                       <Button
@@ -262,8 +253,8 @@ function TripDetailContent() {
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-2">
                   {trip.isOwner
-                    ? "No collaborators yet. Invite others to join!"
-                    : "No collaborators on this trip."}
+                    ? 'No collaborators yet. Invite others to join!'
+                    : 'No collaborators on this trip.'}
                 </p>
               )}
             </div>
@@ -280,10 +271,7 @@ function TripDetailContent() {
           </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">
-            <Button
-              onClick={() => router.push(`/trip/${trip.id}/add`)}
-              className="w-full gap-2"
-            >
+            <Button onClick={() => router.push(`/trip/${trip.id}/add`)} className="w-full gap-2">
               <Plus className="h-4 w-4" />
               Add Expense
             </Button>
@@ -297,18 +285,16 @@ function TripDetailContent() {
         </Tabs>
       </div>
 
-      <InviteMemberDialog
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-        onInvite={handleInvite}
-      />
+      <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} onInvite={handleInvite} />
     </div>
   );
 }
 
 export default function TripDetailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}
+    >
       <TripDetailContent />
     </Suspense>
   );

@@ -1,21 +1,17 @@
-"use client";
+'use client';
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
-import { ThemeProvider } from "@/components/theme-provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/context/AuthContext";
-import { TripProvider } from "@/context/TripContext";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
-import "@/index.css";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
+import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/context/AuthContext';
+import { TripProvider } from '@/context/TripContext';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toaster';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import '@/index.css';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
@@ -33,9 +29,7 @@ export default function RootLayout({
               <Toaster />
               <Sonner />
               <AuthProvider>
-                <TripProvider>
-                  {children}
-                </TripProvider>
+                <TripProvider>{children}</TripProvider>
               </AuthProvider>
             </TooltipProvider>
           </QueryClientProvider>

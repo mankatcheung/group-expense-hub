@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   getTrips as saGetTrips,
@@ -19,7 +19,7 @@ import {
   acceptInvitation as saAcceptInvitation,
   updateUserProfile as saUpdateUserProfile,
   changePassword as saChangePassword,
-} from "@/lib/server/trips";
+} from '@/lib/server/trips';
 
 export const api = {
   getTrips: async () => saGetTrips(),
@@ -27,17 +27,44 @@ export const api = {
   createTrip: async (trip: { id: string; name: string; createdAt?: string }) => saCreateTrip(trip),
   deleteTrip: async (id: string) => saDeleteTrip(id),
   updateTrip: async (id: string, data: { name: string }) => saUpdateTrip(id, data),
-  addMember: async (tripId: string, member: { id: string; name: string; color: string }) => saAddMember(tripId, member),
-  updateMember: async (tripId: string, memberId: string, data: { name: string }) => saUpdateMember(tripId, memberId, data),
-  removeMember: async (tripId: string, memberId: string, force?: boolean) => saRemoveMember(tripId, memberId, force),
-  addExpense: async (tripId: string, expense: { id: string; description: string; amount: number; currency: string; paidBy: string; splitAmong: string[]; date?: string }) => saAddExpense(tripId, expense),
-  updateExpense: async (tripId: string, expense: { id: string; description: string; amount: number; currency: string; paidBy: string; splitAmong: string[]; date?: string }) => saUpdateExpense(tripId, expense.id, expense),
+  addMember: async (tripId: string, member: { id: string; name: string; color: string }) =>
+    saAddMember(tripId, member),
+  updateMember: async (tripId: string, memberId: string, data: { name: string }) =>
+    saUpdateMember(tripId, memberId, data),
+  removeMember: async (tripId: string, memberId: string, force?: boolean) =>
+    saRemoveMember(tripId, memberId, force),
+  addExpense: async (
+    tripId: string,
+    expense: {
+      id: string;
+      description: string;
+      amount: number;
+      currency: string;
+      paidBy: string;
+      splitAmong: string[];
+      date?: string;
+    }
+  ) => saAddExpense(tripId, expense),
+  updateExpense: async (
+    tripId: string,
+    expense: {
+      id: string;
+      description: string;
+      amount: number;
+      currency: string;
+      paidBy: string;
+      splitAmong: string[];
+      date?: string;
+    }
+  ) => saUpdateExpense(tripId, expense.id, expense),
   removeExpense: async (tripId: string, expenseId: string) => saRemoveExpense(tripId, expenseId),
   inviteMember: async (tripId: string, email: string) => saInviteMember(tripId, email),
-  removeCollaborator: async (tripId: string, memberId: string) => saRemoveCollaborator(tripId, memberId),
+  removeCollaborator: async (tripId: string, memberId: string) =>
+    saRemoveCollaborator(tripId, memberId),
   joinTrip: async (token: string) => saJoinTrip(token),
   getInvitations: async () => saGetInvitations(),
   acceptInvitation: async (id: string) => saAcceptInvitation(id),
   updateUserProfile: async (data: { name?: string; email?: string }) => saUpdateUserProfile(data),
-  changePassword: async (currentPassword: string, newPassword: string) => saChangePassword(currentPassword, newPassword),
+  changePassword: async (currentPassword: string, newPassword: string) =>
+    saChangePassword(currentPassword, newPassword),
 };

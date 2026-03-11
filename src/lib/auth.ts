@@ -1,12 +1,12 @@
-import { betterAuth } from "better-auth";
-import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { prismaAdapter } from "@better-auth/prisma-adapter";
+import { betterAuth } from 'better-auth';
+import { PrismaClient } from '@prisma/client';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
+import { prismaAdapter } from '@better-auth/prisma-adapter';
 
-import { nextCookies } from "better-auth/next-js";
-import { sendPasswordResetEmail } from "./email";
+import { nextCookies } from 'better-auth/next-js';
+import { sendPasswordResetEmail } from './email';
 
-const dbUrl = process.env.TURSO_DATABASE_URL || "file:./dev.db";
+const dbUrl = process.env.TURSO_DATABASE_URL || 'file:./dev.db';
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
 const adapter = new PrismaLibSql({
@@ -17,9 +17,9 @@ const prisma = new PrismaClient({ adapter });
 
 export const auth = betterAuth({
   plugins: [nextCookies()],
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   database: prismaAdapter(prisma, {
-    provider: "sqlite",
+    provider: 'sqlite',
   }),
   emailAndPassword: {
     enabled: true,
@@ -40,7 +40,7 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: ["localhost:*", process.env.BETTER_AUTH_URL].filter(
-    (origin): origin is string => Boolean(origin),
+  trustedOrigins: ['localhost:*', process.env.BETTER_AUTH_URL].filter((origin): origin is string =>
+    Boolean(origin)
   ),
 });

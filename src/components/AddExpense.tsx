@@ -1,16 +1,22 @@
-import { useState } from "react";
-import { Member, Expense } from "@/lib/types";
-import { CURRENCIES } from "@/lib/currencies";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Receipt, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { Member, Expense } from '@/lib/types';
+import { CURRENCIES } from '@/lib/currencies';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Receipt, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Props {
   members: Member[];
@@ -18,17 +24,15 @@ interface Props {
 }
 
 export default function AddExpense({ members, onAdd }: Props) {
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [paidBy, setPaidBy] = useState("");
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [paidBy, setPaidBy] = useState('');
   const [splitAmong, setSplitAmong] = useState<string[]>([]);
   const [date, setDate] = useState<Date>(new Date());
 
   const toggleSplit = (id: string) => {
-    setSplitAmong((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSplitAmong((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const selectAll = () => {
@@ -46,8 +50,8 @@ export default function AddExpense({ members, onAdd }: Props) {
       splitAmong,
       date: date.toISOString(),
     });
-    setDescription("");
-    setAmount("");
+    setDescription('');
+    setAmount('');
     setSplitAmong([]);
     setDate(new Date());
   };
@@ -56,7 +60,9 @@ export default function AddExpense({ members, onAdd }: Props) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 text-center">
         <Receipt className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground text-sm">Add at least 2 members to start adding expenses</p>
+        <p className="text-muted-foreground text-sm">
+          Add at least 2 members to start adding expenses
+        </p>
       </div>
     );
   }
@@ -99,13 +105,25 @@ export default function AddExpense({ members, onAdd }: Props) {
         <Label className="text-sm text-muted-foreground mb-2 block">Date</Label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full justify-start text-left font-normal',
+                !date && 'text-muted-foreground'
+              )}
+            >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {format(date, "PPP")}
+              {format(date, 'PPP')}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" />
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(d) => d && setDate(d)}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
           </PopoverContent>
         </Popover>
       </div>
@@ -120,7 +138,10 @@ export default function AddExpense({ members, onAdd }: Props) {
             {members.map((m) => (
               <SelectItem key={m.id} value={m.id}>
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full inline-block" style={{ backgroundColor: m.color }} />
+                  <span
+                    className="h-2 w-2 rounded-full inline-block"
+                    style={{ backgroundColor: m.color }}
+                  />
                   {m.name}
                 </span>
               </SelectItem>

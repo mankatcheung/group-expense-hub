@@ -1,5 +1,5 @@
-import { withSentryConfig } from "@sentry/nextjs";
-import type { NextConfig } from "next";
+import { withSentryConfig } from '@sentry/nextjs';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
@@ -9,9 +9,9 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "fetchapptech",
+  org: 'fetchapptech',
 
-  project: "javascript-nextjs",
+  project: 'javascript-nextjs',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

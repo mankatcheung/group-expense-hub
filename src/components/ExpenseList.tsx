@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
-import { Expense, Member } from "@/lib/types";
-import { getCurrencySymbol } from "@/lib/currencies";
-import { Trash2, Pencil, List, Calendar } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import EditExpenseDialog from "@/components/EditExpenseDialog";
+import { useMemo, useState } from 'react';
+import { Expense, Member } from '@/lib/types';
+import { getCurrencySymbol } from '@/lib/currencies';
+import { Trash2, Pencil, List, Calendar } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import EditExpenseDialog from '@/components/EditExpenseDialog';
 
 interface Props {
   expenses: Expense[];
@@ -14,17 +14,17 @@ interface Props {
   onUpdate: (expense: Expense) => void;
 }
 
-type ViewMode = "date" | "list";
+type ViewMode = 'date' | 'list';
 
 export default function ExpenseList({ expenses, members, onRemove, onUpdate }: Props) {
   const getMember = (id: string) => members.find((m) => m.id === id);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("date");
+  const [viewMode, setViewMode] = useState<ViewMode>('date');
 
   const grouped = useMemo(() => {
     const map = new Map<string, Expense[]>();
     for (const e of expenses) {
-      const key = format(parseISO(e.date), "yyyy-MM-dd");
+      const key = format(parseISO(e.date), 'yyyy-MM-dd');
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     }
@@ -32,16 +32,15 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
   }, [expenses]);
 
   const sortedExpenses = useMemo(() => {
-    return [...expenses].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    return [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [expenses]);
 
   const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
 
   if (expenses.length === 0) return null;
 
-  const currentTab = activeTab && grouped.some(([d]) => d === activeTab) ? activeTab : grouped[0]?.[0];
+  const currentTab =
+    activeTab && grouped.some(([d]) => d === activeTab) ? activeTab : grouped[0]?.[0];
 
   const renderExpenseItem = (e: Expense) => {
     const payer = getMember(e.paidBy);
@@ -53,8 +52,8 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold"
           style={{
-            backgroundColor: (payer?.color ?? "hsl(var(--primary))") + "18",
-            color: payer?.color ?? "hsl(var(--primary))",
+            backgroundColor: (payer?.color ?? 'hsl(var(--primary))') + '18',
+            color: payer?.color ?? 'hsl(var(--primary))',
           }}
         >
           {getCurrencySymbol(e.currency)}
@@ -62,16 +61,16 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{e.description}</p>
           <p className="text-xs text-muted-foreground">
-            <span style={{ color: payer?.color }}>{payer?.name}</span> paid · split {e.splitAmong.length} way{e.splitAmong.length > 1 ? "s" : ""}
+            <span style={{ color: payer?.color }}>{payer?.name}</span> paid · split{' '}
+            {e.splitAmong.length} way{e.splitAmong.length > 1 ? 's' : ''}
           </p>
         </div>
         <div className="text-right shrink-0">
           <p className="font-semibold text-sm">
-            {getCurrencySymbol(e.currency)}{e.amount.toFixed(2)}
+            {getCurrencySymbol(e.currency)}
+            {e.amount.toFixed(2)}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {format(parseISO(e.date), "MMM d")}
-          </p>
+          <p className="text-xs text-muted-foreground">{format(parseISO(e.date), 'MMM d')}</p>
         </div>
         <button
           onClick={() => setEditingExpense(e)}
@@ -97,18 +96,18 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         </h2>
         <div className="flex gap-1">
           <Button
-            variant={viewMode === "date" ? "secondary" : "ghost"}
+            variant={viewMode === 'date' ? 'secondary' : 'ghost'}
             size="sm"
-            onClick={() => setViewMode("date")}
+            onClick={() => setViewMode('date')}
             className="gap-1"
           >
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">By Date</span>
           </Button>
           <Button
-            variant={viewMode === "list" ? "secondary" : "ghost"}
+            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
             size="sm"
-            onClick={() => setViewMode("list")}
+            onClick={() => setViewMode('list')}
             className="gap-1"
           >
             <List className="h-4 w-4" />
@@ -117,12 +116,12 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         </div>
       </div>
 
-      {viewMode === "date" ? (
+      {viewMode === 'date' ? (
         <Tabs value={currentTab} onValueChange={setActiveTab}>
           <TabsList className="w-full flex-wrap h-auto gap-1">
             {grouped.map(([date, items]) => (
               <TabsTrigger key={date} value={date} className="text-xs">
-                {format(parseISO(date), "MMM d")} ({items.length})
+                {format(parseISO(date), 'MMM d')} ({items.length})
               </TabsTrigger>
             ))}
           </TabsList>
@@ -134,9 +133,7 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
           ))}
         </Tabs>
       ) : (
-        <div className="space-y-2">
-          {sortedExpenses.map(renderExpenseItem)}
-        </div>
+        <div className="space-y-2">{sortedExpenses.map(renderExpenseItem)}</div>
       )}
 
       {editingExpense && (

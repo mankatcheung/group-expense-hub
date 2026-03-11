@@ -1,5 +1,5 @@
-import { createContext, useContext, ReactNode } from "react";
-import { authClient } from "@/lib/auth-client";
+import { createContext, useContext, ReactNode } from 'react';
+import { authClient } from '@/lib/auth-client';
 
 interface User {
   id: string;
@@ -63,15 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }

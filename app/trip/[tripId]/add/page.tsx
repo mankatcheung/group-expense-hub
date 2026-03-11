@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useParams, useRouter } from "next/navigation";
-import { useTrip } from "@/context/TripContext";
-import AddExpense from "@/components/AddExpense";
-import Header from "@/components/Header";
-import { PageSkeleton, FormSkeleton } from "@/components/Skeletons";
-import { Plane, ArrowLeft, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useParams, useRouter } from 'next/navigation';
+import { useTrip } from '@/context/TripContext';
+import AddExpense from '@/components/AddExpense';
+import Header from '@/components/Header';
+import { PageSkeleton, FormSkeleton } from '@/components/Skeletons';
+import { Plane, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AddExpensePage() {
   const params = useParams();
@@ -49,7 +49,7 @@ export default function AddExpensePage() {
               <Button variant="outline" size="sm" onClick={refreshTrips}>
                 Try Again
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push("/")}>
+              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
                 Go Home
               </Button>
             </div>
@@ -64,7 +64,9 @@ export default function AddExpensePage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Trip not found</p>
-          <Button variant="outline" onClick={() => router.push("/")}>Go Home</Button>
+          <Button variant="outline" onClick={() => router.push('/')}>
+            Go Home
+          </Button>
         </div>
       </div>
     );
@@ -81,9 +83,7 @@ export default function AddExpensePage() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight">
             {trip.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add members and log expenses
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Add members and log expenses</p>
         </div>
 
         <div className="space-y-6">

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LogOut, Plane, Settings, Sun, Moon, User } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+} from '@/components/ui/dropdown-menu';
+import { LogOut, Plane, Settings, Sun, Moon, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -25,7 +25,7 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    router.push('/login');
   };
 
   return (
@@ -48,12 +48,12 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-2">
               <User className="h-4 w-4" />
-              {user?.name || user?.email?.split("@")[0]}
+              {user?.name || user?.email?.split('@')[0]}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-              {theme === "dark" ? (
+            <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark' ? (
                 <>
                   <Sun className="mr-2 h-4 w-4" />
                   Light Mode
@@ -66,7 +66,7 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>

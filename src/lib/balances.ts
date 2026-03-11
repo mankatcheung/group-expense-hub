@@ -1,4 +1,4 @@
-import { Expense, Balance } from "./types";
+import { Expense, Balance } from './types';
 
 export function calculateBalances(expenses: Expense[]): Balance[] {
   // Group by currency
@@ -34,12 +34,13 @@ export function calculateBalances(expenses: Expense[]): Balance[] {
     creditors.sort((a, b) => b.amount - a.amount);
     debtors.sort((a, b) => b.amount - a.amount);
 
-    let i = 0, j = 0;
+    let i = 0,
+      j = 0;
     while (i < debtors.length && j < creditors.length) {
       const debtor = debtors[i];
       const creditor = creditors[j];
       if (!debtor || !creditor) break;
-      
+
       const transfer = Math.min(debtor.amount, creditor.amount);
       if (transfer > 0.01) {
         allBalances.push({

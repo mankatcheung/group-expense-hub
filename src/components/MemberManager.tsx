@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Member } from "@/lib/types";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Member } from '@/lib/types';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,18 +11,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { UserPlus, X, AlertTriangle, Loader2, Pencil } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { UserPlus, X, AlertTriangle, Loader2, Pencil } from 'lucide-react';
 
 const MEMBER_COLORS = [
-  "#22C55E",
-  "#F97316",
-  "#3B82F6",
-  "#EC4899",
-  "#8B5CF6",
-  "#EF4444",
-  "#14B8A6",
-  "#EAB308",
+  '#22C55E',
+  '#F97316',
+  '#3B82F6',
+  '#EC4899',
+  '#8B5CF6',
+  '#EF4444',
+  '#14B8A6',
+  '#EAB308',
 ];
 
 interface MemberWithExpenses extends Member {
@@ -35,15 +35,18 @@ interface Props {
   tripId: string;
   onAdd: (member: Member) => void;
   onUpdate: (memberId: string, name: string) => void;
-  onRemove: (id: string, force?: boolean) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
+  onRemove: (
+    id: string,
+    force?: boolean
+  ) => Promise<{ success?: boolean; error?: string; expenseCount?: number; memberName?: string }>;
 }
 
 export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Props) {
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [editError, setEditError] = useState("");
+  const [editValue, setEditValue] = useState('');
+  const [editError, setEditError] = useState('');
   const [memberToRemove, setMemberToRemove] = useState<MemberWithExpenses | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -58,17 +61,17 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
     const trimmed = name.trim();
     if (!trimmed) return;
     if (isNameTaken(trimmed)) {
-      setError("A member with this name already exists");
+      setError('A member with this name already exists');
       return;
     }
-    setError("");
+    setError('');
     const colorIndex = members.length % MEMBER_COLORS.length;
     onAdd({
       id: crypto.randomUUID(),
       name: trimmed,
-      color: MEMBER_COLORS[colorIndex] ?? "#16553b",
+      color: MEMBER_COLORS[colorIndex] ?? '#16553b',
     });
-    setName("");
+    setName('');
   };
 
   const handleRemoveClick = async (member: Member) => {
@@ -83,7 +86,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
         });
       }
     } catch (error) {
-      console.error("Failed to check member:", error);
+      console.error('Failed to check member:', error);
     } finally {
       setIsChecking(false);
     }
@@ -91,13 +94,13 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
 
   const handleConfirmRemove = async () => {
     if (!memberToRemove) return;
-    
+
     setIsRemoving(true);
     try {
       await onRemove(memberToRemove.id, true);
       setMemberToRemove(null);
     } catch (error) {
-      console.error("Failed to remove member:", error);
+      console.error('Failed to remove member:', error);
     } finally {
       setIsRemoving(false);
     }
@@ -110,37 +113,37 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
   const handleEditClick = (member: Member) => {
     setEditingId(member.id);
     setEditValue(member.name);
-    setEditError("");
+    setEditError('');
   };
 
   const handleEditSave = (memberId: string) => {
     const trimmed = editValue.trim();
     if (!trimmed) {
       setEditingId(null);
-      setEditValue("");
-      setEditError("");
+      setEditValue('');
+      setEditError('');
       return;
     }
     if (isNameTaken(trimmed, memberId)) {
-      setEditError("A member with this name already exists");
+      setEditError('A member with this name already exists');
       return;
     }
-    setEditError("");
+    setEditError('');
     onUpdate(memberId, trimmed);
     setEditingId(null);
-    setEditValue("");
+    setEditValue('');
   };
 
   const handleEditCancel = () => {
     setEditingId(null);
-    setEditValue("");
-    setEditError("");
+    setEditValue('');
+    setEditError('');
   };
 
   const handleEditKeyDown = (e: React.KeyboardEvent, memberId: string) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleEditSave(memberId);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       handleEditCancel();
     }
   };
@@ -155,9 +158,9 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
             value={name}
             onChange={(e) => {
               setName(e.target.value);
-              setError("");
+              setError('');
             }}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             className="flex-1"
           />
           <Button onClick={handleAdd} size="icon" className="shrink-0">
@@ -171,19 +174,16 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
           <span
             key={m.id}
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium"
-            style={{ backgroundColor: m.color + "20", color: m.color }}
+            style={{ backgroundColor: m.color + '20', color: m.color }}
           >
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: m.color }}
-            />
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.color }} />
             {editingId === m.id ? (
               <div className="flex items-center gap-1">
                 <Input
                   value={editValue}
                   onChange={(e) => {
                     setEditValue(e.target.value);
-                    setEditError("");
+                    setEditError('');
                   }}
                   onKeyDown={(e) => handleEditKeyDown(e, m.id)}
                   onBlur={() => handleEditSave(m.id)}
@@ -235,8 +235,9 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
             <AlertDialogDescription>
               {memberToRemove?.hasExpenses ? (
                 <span>
-                  This member is involved in <strong>{memberToRemove.expenseCount}</strong> expense(s). 
-                  Removing them will also delete these expenses. This action cannot be undone.
+                  This member is involved in <strong>{memberToRemove.expenseCount}</strong>{' '}
+                  expense(s). Removing them will also delete these expenses. This action cannot be
+                  undone.
                 </span>
               ) : (
                 <span>Are you sure you want to remove this member from the trip?</span>
@@ -250,7 +251,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
               disabled={isRemoving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isRemoving ? "Removing..." : "Remove Member"}
+              {isRemoving ? 'Removing...' : 'Remove Member'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

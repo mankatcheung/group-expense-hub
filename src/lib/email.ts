@@ -1,8 +1,7 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const APP_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
-const SENDER_EMAIL =
-  process.env.BREVO_SENDER_EMAIL || "noreply@group-expense-hub.com";
-const SENDER_NAME = process.env.BREVO_SENDER_NAME || "Group Expense Hub";
+const APP_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@group-expense-hub.com';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Group Expense Hub';
 
 export interface EmailOptions {
   to: string;
@@ -12,15 +11,15 @@ export interface EmailOptions {
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
   if (!BREVO_API_KEY) {
-    console.warn("BREVO_API_KEY not set, skipping email send");
+    console.warn('BREVO_API_KEY not set, skipping email send');
     return;
   }
 
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
     headers: {
-      "api-key": BREVO_API_KEY,
-      "Content-Type": "application/json",
+      'api-key': BREVO_API_KEY,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       sender: {
@@ -35,7 +34,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
 
   if (!response.ok) {
     const error = await response.text();
-    console.error("Failed to send email:", error);
+    console.error('Failed to send email:', error);
     throw new Error(`Failed to send email: ${error}`);
   }
 
@@ -62,7 +61,7 @@ export function getEmailTemplate({
       ? `
       <a href="${ctaUrl}" style="display: inline-block; background: #16553b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">${cta}</a>
     `
-      : "";
+      : '';
 
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -84,20 +83,20 @@ export async function sendPasswordResetEmail({
   resetUrl: string;
 }) {
   const html = getEmailTemplate({
-    title: "Reset Your Password",
+    title: 'Reset Your Password',
     body: `
-      <p>Hi ${name || "there"},</p>
+      <p>Hi ${name || 'there'},</p>
       <p>Click the button below to reset your password:</p>
       <p>Or copy and paste this link: ${resetUrl}</p>
       <p>This link expires in 1 hour.</p>
     `,
-    cta: "Reset Password",
+    cta: 'Reset Password',
     ctaUrl: resetUrl,
   });
 
   await sendEmail({
     to,
-    subject: "Reset Your Password - Group Expense Hub",
+    subject: 'Reset Your Password - Group Expense Hub',
     html,
   });
 }
@@ -122,7 +121,7 @@ export async function sendTripInvitationEmail({
       <p>Or copy and paste this link: ${inviteUrl}</p>
       <p>This invitation expires in 7 days.</p>
     `,
-    cta: "Join Trip",
+    cta: 'Join Trip',
     ctaUrl: inviteUrl,
   });
 
@@ -149,11 +148,11 @@ export async function sendTripAddedNotification({
   const html = getEmailTemplate({
     title: "You've been added to a trip!",
     body: `
-      <p>Hi ${name || to.split("@")[0]},</p>
+      <p>Hi ${name || to.split('@')[0]},</p>
       <p><strong>${inviterName}</strong> has added you as a collaborator to their trip "<strong>${tripName}</strong>" on Group Expense Hub.</p>
       <p>You can now view and manage expenses for this trip.</p>
     `,
-    cta: "View Trip",
+    cta: 'View Trip',
     ctaUrl: tripUrl,
   });
 

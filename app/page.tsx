@@ -1,20 +1,30 @@
-"use client";
+'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, Suspense } from "react";
-import { useTrip } from "@/context/TripContext";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
-import { TripCardSkeleton, InvitationSkeleton } from "@/components/Skeletons";
-import { Plus, Trash2, ChevronRight, MapPin, Mail, Check, Loader2, Plane, AlertCircle } from "lucide-react";
-import { getCurrencySymbol } from "@/lib/currencies";
-import { api } from "@/services/api";
-import { toast } from "sonner";
+import { useState, useEffect, Suspense } from 'react';
+import { useTrip } from '@/context/TripContext';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import Header from '@/components/Header';
+import { TripCardSkeleton, InvitationSkeleton } from '@/components/Skeletons';
+import {
+  Plus,
+  Trash2,
+  ChevronRight,
+  MapPin,
+  Mail,
+  Check,
+  Loader2,
+  Plane,
+  AlertCircle,
+} from 'lucide-react';
+import { getCurrencySymbol } from '@/lib/currencies';
+import { api } from '@/services/api';
+import { toast } from 'sonner';
 
 interface Invitation {
   id: string;
@@ -34,15 +44,15 @@ function IndexContent() {
   const { trips, isLoading, error, createTrip, deleteTrip, refreshTrips } = useTrip();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [tripName, setTripName] = useState("");
+  const [tripName, setTripName] = useState('');
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  const currentTab = searchParams.get("tab") || "trips";
+  const currentTab = searchParams.get('tab') || 'trips';
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    const token = searchParams.get('token');
     if (token) {
       handleJoinByToken(token);
     }
@@ -54,7 +64,7 @@ function IndexContent() {
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", value);
+    params.set('tab', value);
     router.push(`?${params.toString()}`);
   };
 
@@ -64,7 +74,7 @@ function IndexContent() {
       const data = await api.getInvitations();
       setInvitations(data);
     } catch (error: any) {
-      toast.error("Failed to load invitations", { description: error?.message });
+      toast.error('Failed to load invitations', { description: error?.message });
     } finally {
       setLoadingInvitations(false);
     }
@@ -76,7 +86,7 @@ function IndexContent() {
       refreshTrips();
       router.push(`/trip/${result.tripId}`);
     } catch (error: any) {
-      toast.error("Failed to join trip", { description: error?.message });
+      toast.error('Failed to join trip', { description: error?.message });
     }
   };
 
@@ -88,7 +98,7 @@ function IndexContent() {
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
       router.push(`/trip/${result.tripId}`);
     } catch (error: any) {
-      toast.error("Failed to accept invitation", { description: error?.message });
+      toast.error('Failed to accept invitation', { description: error?.message });
     } finally {
       setAcceptingId(null);
     }
@@ -98,7 +108,7 @@ function IndexContent() {
     const name = tripName.trim();
     if (!name) return;
     const trip = createTrip(name);
-    setTripName("");
+    setTripName('');
     router.push(`/trip/${trip.id}`);
   };
 
@@ -126,7 +136,7 @@ function IndexContent() {
               placeholder="e.g. Bali 2026, Road Trip..."
               value={tripName}
               onChange={(e) => setTripName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               className="flex-1"
             />
             <Button onClick={handleCreate} className="gap-2 shrink-0">
@@ -138,7 +148,9 @@ function IndexContent() {
 
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="w-full">
-            <TabsTrigger value="trips" className="flex-1">Trips</TabsTrigger>
+            <TabsTrigger value="trips" className="flex-1">
+              Trips
+            </TabsTrigger>
             <TabsTrigger value="invitations" className="flex-1">
               Invitations
               {invitations.length > 0 && (
@@ -186,10 +198,15 @@ function IndexContent() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{trip.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {trip.members.length} member{trip.members.length !== 1 ? "s" : ""} · {trip.expenses.length} expense{trip.expenses.length !== 1 ? "s" : ""}
+                          {trip.members.length} member{trip.members.length !== 1 ? 's' : ''} ·{' '}
+                          {trip.expenses.length} expense{trip.expenses.length !== 1 ? 's' : ''}
                           {totals.length > 0 && (
                             <span>
-                              {" "}· {totals.map(([cur, amt]) => `${getCurrencySymbol(cur)}${amt.toFixed(0)}`).join(", ")}
+                              {' '}
+                              ·{' '}
+                              {totals
+                                .map(([cur, amt]) => `${getCurrencySymbol(cur)}${amt.toFixed(0)}`)
+                                .join(', ')}
                             </span>
                           )}
                         </p>
@@ -213,7 +230,9 @@ function IndexContent() {
             ) : (
               <div className="rounded-2xl border border-border bg-card p-8 text-center">
                 <MapPin className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-                <p className="text-muted-foreground text-sm">Create your first trip to get started</p>
+                <p className="text-muted-foreground text-sm">
+                  Create your first trip to get started
+                </p>
               </div>
             )}
           </TabsContent>
@@ -238,7 +257,7 @@ function IndexContent() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{inv.tripName}</p>
                       <p className="text-xs text-muted-foreground">
-                        Invited by {inv.inviter?.name || inv.inviter?.email || "Unknown"}
+                        Invited by {inv.inviter?.name || inv.inviter?.email || 'Unknown'}
                       </p>
                     </div>
                     <Button
@@ -272,7 +291,9 @@ function IndexContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}
+    >
       <IndexContent />
     </Suspense>
   );

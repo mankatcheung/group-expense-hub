@@ -1,35 +1,35 @@
-"use client";
+'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Plane } from "lucide-react";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plane } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   if (!isLoading && isAuthenticated) {
-    router.replace("/");
+    router.replace('/');
     return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     try {
       await login(email, password);
-      router.push("/");
+      router.push('/');
     } catch (err: any) {
-      setError(err.message || "Failed to login");
+      setError(err.message || 'Failed to login');
     }
   };
 
@@ -66,9 +66,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <Button type="submit" className="w-full">
             Sign In
@@ -76,21 +74,15 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center text-sm">
-          <Link
-            href="/forgot-password"
-            className="text-muted-foreground hover:text-primary"
-          >
+          <Link href="/forgot-password" className="text-muted-foreground hover:text-primary">
             Forgot password?
           </Link>
         </div>
 
         <div className="text-center text-sm">
           <p className="text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-primary hover:underline"
-            >
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-medium text-primary hover:underline">
               Sign up
             </Link>
           </p>

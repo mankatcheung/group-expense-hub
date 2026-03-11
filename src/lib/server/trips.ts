@@ -1,11 +1,11 @@
-"use server";
+'use server';
 
-import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaClient } from '@prisma/client';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
 
 const createPrismaClient = () => {
   const adapter = new PrismaLibSql({
-    url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
+    url: process.env.TURSO_DATABASE_URL || 'file:./dev.db',
     authToken: process.env.TURSO_AUTH_TOKEN,
   });
   return new PrismaClient({ adapter });
@@ -20,26 +20,26 @@ const getPrisma = () => {
   return prisma;
 };
 
-import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { sendTripInvitationEmail, sendTripAddedNotification, getAppUrl } from "@/lib/email";
+import { auth } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { sendTripInvitationEmail, sendTripAddedNotification, getAppUrl } from '@/lib/email';
 
 async function getSession() {
   const cookieStore = await cookies();
 
   // Check for secure cookie first (production/HTTPS), then fall back to regular cookie (development)
   const sessionToken =
-    cookieStore.get("__Secure-better-auth.session_token") ||
-    cookieStore.get("better-auth.session_token");
+    cookieStore.get('__Secure-better-auth.session_token') ||
+    cookieStore.get('better-auth.session_token');
 
   if (!sessionToken) {
-    throw new Error("Unauthorized");
+    throw new Error('Unauthorized');
   }
 
-  const cookieName = sessionToken.name.startsWith("__Secure-")
-    ? "__Secure-better-auth.session_token"
-    : "better-auth.session_token";
+  const cookieName = sessionToken.name.startsWith('__Secure-')
+    ? '__Secure-better-auth.session_token'
+    : 'better-auth.session_token';
 
   const session = await auth.api.getSession({
     headers: {
@@ -48,18 +48,15 @@ async function getSession() {
   });
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error('Unauthorized');
   }
 
   return session;
 }
 
-export type TripAccessLevel = "owner" | "collaborator" | null;
+export type TripAccessLevel = 'owner' | 'collaborator' | null;
 
-async function getTripAccessLevel(
-  tripId: string,
-  userId: string,
-): Promise<TripAccessLevel> {
+async function getTripAccessLevel(tripId: string, userId: string): Promise<TripAccessLevel> {
   const trip = await getPrisma().trip.findUnique({
     where: { id: tripId },
     select: { userId: true },
@@ -67,7 +64,7 @@ async function getTripAccessLevel(
 
   if (!trip) return null;
 
-  if (trip.userId === userId) return "owner";
+  if (trip.userId === userId) return 'owner';
 
   const member = await getPrisma().tripMember.findUnique({
     where: {
@@ -78,7 +75,7 @@ async function getTripAccessLevel(
     },
   });
 
-  return member ? "collaborator" : null;
+  return member ? 'collaborator' : null;
 }
 
 async function canAccessTrip(tripId: string, userId: string) {
@@ -88,7 +85,7 @@ async function canAccessTrip(tripId: string, userId: string) {
 
 async function canEditTrip(tripId: string, userId: string) {
   const access = await getTripAccessLevel(tripId, userId);
-  return access === "owner" || access === "collaborator";
+  return access === 'owner' || access === 'collaborator';
 }
 
 function formatTrip(trip: any, userId: string) {
@@ -158,7 +155,7 @@ export async function getTrips() {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -188,7 +185,7 @@ export async function getTrips() {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -202,7 +199,7 @@ export async function getTrip(id: string) {
 
   const hasAccess = await canAccessTrip(id, userId);
   if (!hasAccess) {
-    throw new Error("Trip not found");
+    throw new Error('Trip not found');
   }
 
   const trip = await getPrisma().trip.findUnique({
@@ -226,17 +223,13 @@ export async function getTrip(id: string) {
   });
 
   if (!trip) {
-    throw new Error("Trip not found");
+    throw new Error('Trip not found');
   }
 
   return formatTrip(trip, userId);
 }
 
-export async function createTrip(data: {
-  id: string;
-  name: string;
-  createdAt?: string;
-}) {
+export async function createTrip(data: { id: string; name: string; createdAt?: string }) {
   const session = await getSession();
 
   const trip = await getPrisma().trip.create({
@@ -248,7 +241,7 @@ export async function createTrip(data: {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath('/');
   return {
     id: trip.id,
     name: trip.name,
@@ -268,7 +261,7 @@ export async function deleteTrip(id: string) {
     where: { id, userId: session.user.id },
   });
 
-  revalidatePath("/");
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -277,7 +270,7 @@ export async function updateTrip(id: string, data: { name: string }) {
 
   const canEdit = await canEditTrip(id, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   const trip = await getPrisma().trip.update({
@@ -285,20 +278,17 @@ export async function updateTrip(id: string, data: { name: string }) {
     data: { name: data.name },
   });
 
-  revalidatePath("/");
+  revalidatePath('/');
   revalidatePath(`/trip/${id}`);
   return trip;
 }
 
-export async function addMember(
-  tripId: string,
-  data: { id: string; name: string; color: string },
-) {
+export async function addMember(tripId: string, data: { id: string; name: string; color: string }) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   const member = await getPrisma().member.create({
@@ -314,16 +304,12 @@ export async function addMember(
   return member;
 }
 
-export async function updateMember(
-  tripId: string,
-  memberId: string,
-  data: { name: string },
-) {
+export async function updateMember(tripId: string, memberId: string, data: { name: string }) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   const member = await getPrisma().member.update({
@@ -335,16 +321,12 @@ export async function updateMember(
   return member;
 }
 
-export async function removeMember(
-  tripId: string,
-  memberId: string,
-  force: boolean = false,
-) {
+export async function removeMember(tripId: string, memberId: string, force: boolean = false) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   const member = await getPrisma().member.findUnique({
@@ -352,7 +334,7 @@ export async function removeMember(
   });
 
   if (!member) {
-    throw new Error("Member not found");
+    throw new Error('Member not found');
   }
 
   const expensesWithMember = await getPrisma().expense.findMany({
@@ -366,7 +348,7 @@ export async function removeMember(
 
   if (hasExpenses && !force) {
     return {
-      error: "Member has expenses",
+      error: 'Member has expenses',
       expenseCount: expensesWithMember.length,
       memberName: member.name,
     };
@@ -380,10 +362,7 @@ export async function removeMember(
       getPrisma().expense.deleteMany({
         where: {
           tripId,
-          OR: [
-            { paidById: memberId },
-            { id: { in: expensesWithMember.map((e) => e.id) } },
-          ],
+          OR: [{ paidById: memberId }, { id: { in: expensesWithMember.map((e) => e.id) } }],
         },
       }),
       getPrisma().member.delete({
@@ -410,13 +389,13 @@ export async function addExpense(
     paidBy: string;
     splitAmong: string[];
     date?: string;
-  },
+  }
 ) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   await getPrisma().expense.create({
@@ -450,13 +429,13 @@ export async function updateExpense(
     paidBy: string;
     splitAmong: string[];
     date?: string;
-  },
+  }
 ) {
   const session = await getSession();
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   await getPrisma().expense.update({
@@ -486,7 +465,7 @@ export async function removeExpense(tripId: string, expenseId: string) {
 
   const canEdit = await canEditTrip(tripId, session.user.id);
   if (!canEdit) {
-    throw new Error("Not authorized to edit this trip");
+    throw new Error('Not authorized to edit this trip');
   }
 
   await getPrisma().expense.delete({
@@ -498,27 +477,27 @@ export async function removeExpense(tripId: string, expenseId: string) {
 }
 
 const COLORS = [
-  "#EF4444",
-  "#F97316",
-  "#EAB308",
-  "#22C55E",
-  "#14B8A6",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
 ];
 
 function getRandomColor() {
   const index = Math.floor(Math.random() * COLORS.length);
-  return COLORS[index] ?? "#16553b";
+  return COLORS[index] ?? '#16553b';
 }
 
 export async function inviteMember(tripId: string, email: string) {
   const session = await getSession();
 
   const access = await getTripAccessLevel(tripId, session.user.id);
-  if (access !== "owner") {
-    throw new Error("Only the owner can invite members");
+  if (access !== 'owner') {
+    throw new Error('Only the owner can invite members');
   }
 
   const trip = await getPrisma().trip.findUnique({
@@ -527,10 +506,10 @@ export async function inviteMember(tripId: string, email: string) {
   });
 
   if (!trip) {
-    throw new Error("Trip not found");
+    throw new Error('Trip not found');
   }
 
-  const inviterName = trip.user?.name || trip.user?.email || "Someone";
+  const inviterName = trip.user?.name || trip.user?.email || 'Someone';
 
   const user = await getPrisma().user.findUnique({
     where: { email },
@@ -549,7 +528,7 @@ export async function inviteMember(tripId: string, email: string) {
     if (existingInvitation && existingInvitation.expiresAt > new Date()) {
       return {
         success: true,
-        message: "Invitation already sent",
+        message: 'Invitation already sent',
         pending: true,
       };
     }
@@ -565,7 +544,7 @@ export async function inviteMember(tripId: string, email: string) {
       },
       update: {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        status: "pending",
+        status: 'pending',
         token,
       },
       create: {
@@ -586,7 +565,7 @@ export async function inviteMember(tripId: string, email: string) {
 
     return {
       success: true,
-      message: "Invitation sent to " + email,
+      message: 'Invitation sent to ' + email,
       pending: true,
     };
   }
@@ -601,11 +580,11 @@ export async function inviteMember(tripId: string, email: string) {
   });
 
   if (existingMember) {
-    throw new Error("User is already a member");
+    throw new Error('User is already a member');
   }
 
   if (user.id === session.user.id) {
-    throw new Error("Cannot invite yourself");
+    throw new Error('Cannot invite yourself');
   }
 
   const [tripMember, member] = await getPrisma().$transaction([
@@ -613,13 +592,13 @@ export async function inviteMember(tripId: string, email: string) {
       data: {
         tripId,
         userId: user.id,
-        role: "collaborator",
+        role: 'collaborator',
       },
     }),
     getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
-        name: user.name ?? user.email.split("@")[0] ?? "User",
+        name: user.name ?? user.email.split('@')[0] ?? 'User',
         color: getRandomColor(),
         tripId,
       },
@@ -637,7 +616,7 @@ export async function inviteMember(tripId: string, email: string) {
   revalidatePath(`/trip/${tripId}`);
   return {
     success: true,
-    message: "User added to trip",
+    message: 'User added to trip',
     user: {
       id: user.id,
       name: user.name,
@@ -656,8 +635,8 @@ export async function removeCollaborator(tripId: string, memberId: string) {
   const session = await getSession();
 
   const access = await getTripAccessLevel(tripId, session.user.id);
-  if (access !== "owner") {
-    throw new Error("Only the owner can remove members");
+  if (access !== 'owner') {
+    throw new Error('Only the owner can remove members');
   }
 
   const tripMember = await getPrisma().tripMember.findUnique({
@@ -666,7 +645,7 @@ export async function removeCollaborator(tripId: string, memberId: string) {
   });
 
   if (!tripMember) {
-    throw new Error("Member not found");
+    throw new Error('Member not found');
   }
 
   await getPrisma().$transaction([
@@ -676,7 +655,7 @@ export async function removeCollaborator(tripId: string, memberId: string) {
     getPrisma().member.deleteMany({
       where: {
         tripId,
-        name: tripMember.user.name || tripMember.user.email.split("@")[0],
+        name: tripMember.user.name || tripMember.user.email.split('@')[0],
       },
     }),
   ]);
@@ -694,15 +673,15 @@ export async function joinTrip(token: string) {
   });
 
   if (!invitation) {
-    throw new Error("Invalid invitation");
+    throw new Error('Invalid invitation');
   }
 
   if (invitation.expiresAt < new Date()) {
-    throw new Error("Invitation expired");
+    throw new Error('Invitation expired');
   }
 
-  if (invitation.status !== "pending") {
-    throw new Error("Invitation already used");
+  if (invitation.status !== 'pending') {
+    throw new Error('Invitation already used');
   }
 
   const existingMember = await getPrisma().tripMember.findUnique({
@@ -715,7 +694,7 @@ export async function joinTrip(token: string) {
   });
 
   if (existingMember) {
-    throw new Error("Already a member");
+    throw new Error('Already a member');
   }
 
   const user = await getPrisma().user.findUnique({
@@ -728,18 +707,16 @@ export async function joinTrip(token: string) {
   });
 
   const existingNames = new Set(tripMembers.map((m) => m.name.toLowerCase()));
-  const emailPrefix = user?.email?.split("@")[0] ?? "User";
+  const emailPrefix = user?.email?.split('@')[0] ?? 'User';
   const proposedName = user?.name ?? emailPrefix;
-  const memberName = existingNames.has(proposedName.toLowerCase())
-    ? emailPrefix
-    : proposedName;
+  const memberName = existingNames.has(proposedName.toLowerCase()) ? emailPrefix : proposedName;
 
   await getPrisma().$transaction([
     getPrisma().tripMember.create({
       data: {
         tripId: invitation.tripId,
         userId,
-        role: invitation.role || "collaborator",
+        role: invitation.role || 'collaborator',
       },
     }),
     getPrisma().member.create({
@@ -752,11 +729,11 @@ export async function joinTrip(token: string) {
     }),
     getPrisma().tripInvitation.update({
       where: { id: invitation.id },
-      data: { status: "accepted" },
+      data: { status: 'accepted' },
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath('/');
   return { success: true, tripId: invitation.tripId };
 }
 
@@ -766,7 +743,7 @@ export async function getInvitations() {
   const invitations = await getPrisma().tripInvitation.findMany({
     where: {
       email: session.user.email,
-      status: "pending",
+      status: 'pending',
       expiresAt: { gt: new Date() },
     },
     include: {
@@ -799,19 +776,19 @@ export async function acceptInvitation(id: string) {
   });
 
   if (!invitation) {
-    throw new Error("Invitation not found");
+    throw new Error('Invitation not found');
   }
 
   if (invitation.email !== session.user.email) {
-    throw new Error("This invitation is not for you");
+    throw new Error('This invitation is not for you');
   }
 
   if (invitation.expiresAt < new Date()) {
-    throw new Error("Invitation expired");
+    throw new Error('Invitation expired');
   }
 
-  if (invitation.status !== "pending") {
-    throw new Error("Invitation already used");
+  if (invitation.status !== 'pending') {
+    throw new Error('Invitation already used');
   }
 
   const existingMember = await getPrisma().tripMember.findUnique({
@@ -824,7 +801,7 @@ export async function acceptInvitation(id: string) {
   });
 
   if (existingMember) {
-    throw new Error("Already a member");
+    throw new Error('Already a member');
   }
 
   await getPrisma().$transaction([
@@ -832,31 +809,28 @@ export async function acceptInvitation(id: string) {
       data: {
         tripId: invitation.tripId,
         userId,
-        role: invitation.role || "collaborator",
+        role: invitation.role || 'collaborator',
       },
     }),
     getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
-        name: session.user.name ?? session.user.email.split("@")[0] ?? "User",
+        name: session.user.name ?? session.user.email.split('@')[0] ?? 'User',
         color: getRandomColor(),
         tripId: invitation.tripId,
       },
     }),
     getPrisma().tripInvitation.update({
       where: { id: invitation.id },
-      data: { status: "accepted" },
+      data: { status: 'accepted' },
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath('/');
   return { success: true, tripId: invitation.tripId };
 }
 
-export async function updateUserProfile(data: {
-  name?: string;
-  email?: string;
-}) {
+export async function updateUserProfile(data: { name?: string; email?: string }) {
   const session = await getSession();
   const userId = session.user.id;
 
@@ -873,7 +847,7 @@ export async function updateUserProfile(data: {
     });
 
     if (existingUser) {
-      throw new Error("Email already in use");
+      throw new Error('Email already in use');
     }
 
     await getPrisma().user.update({
@@ -882,14 +856,11 @@ export async function updateUserProfile(data: {
     });
   }
 
-  revalidatePath("/");
+  revalidatePath('/');
   return { success: true };
 }
 
-export async function changePassword(
-  currentPassword: string,
-  newPassword: string,
-) {
+export async function changePassword(currentPassword: string, newPassword: string) {
   const session = await getSession();
 
   await auth.api.changePassword({

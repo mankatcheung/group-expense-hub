@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import * as React from 'react';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -27,13 +27,9 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       className="w-9 h-9"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
-      {theme === "dark" ? (
-        <Moon className="h-4 w-4" />
-      ) : (
-        <Sun className="h-4 w-4" />
-      )}
+      {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
     </Button>
   );
 }

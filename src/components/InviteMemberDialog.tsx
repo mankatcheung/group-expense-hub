@@ -1,8 +1,14 @@
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Mail, UserPlus, Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Mail, UserPlus, Loader2 } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -11,28 +17,28 @@ interface Props {
 }
 
 export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Props) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleInvite = async () => {
     if (!email.trim()) return;
-    
+
     setLoading(true);
-    setError("");
-    setSuccess("");
-    
+    setError('');
+    setSuccess('');
+
     try {
       await onInvite(email.trim());
-      setSuccess("Invitation sent successfully!");
-      setEmail("");
+      setSuccess('Invitation sent successfully!');
+      setEmail('');
       setTimeout(() => {
         onOpenChange(false);
-        setSuccess("");
+        setSuccess('');
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to send invitation");
+      setError(err.response?.data?.error || 'Failed to send invitation');
     } finally {
       setLoading(false);
     }
@@ -40,9 +46,9 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      setEmail("");
-      setError("");
-      setSuccess("");
+      setEmail('');
+      setError('');
+      setSuccess('');
     }
     onOpenChange(isOpen);
   };
@@ -56,7 +62,8 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
             Invite Collaborator
           </DialogTitle>
           <DialogDescription>
-            Invite another user to collaborate on this trip. They will be able to add and edit expenses.
+            Invite another user to collaborate on this trip. They will be able to add and edit
+            expenses.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-2">
@@ -69,21 +76,17 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
                 placeholder="colleague@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
                 className="pl-10"
                 disabled={loading}
               />
             </div>
           </div>
-          
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-          
-          {success && (
-            <p className="text-sm text-green-600">{success}</p>
-          )}
-          
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          {success && <p className="text-sm text-green-600">{success}</p>}
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
               Cancel
@@ -95,7 +98,7 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
                   Sending...
                 </>
               ) : (
-                "Send Invitation"
+                'Send Invitation'
               )}
             </Button>
           </div>

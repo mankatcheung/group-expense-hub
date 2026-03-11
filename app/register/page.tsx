@@ -1,43 +1,43 @@
-"use client";
+'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Plane } from "lucide-react";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plane } from 'lucide-react';
 
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
   const { register, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   if (!isLoading && isAuthenticated) {
-    router.replace("/");
+    router.replace('/');
     return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
 
     try {
       await register(name, email, password);
-      router.push("/");
+      router.push('/');
     } catch (err: any) {
-      setError(err.message || "Failed to register");
+      setError(err.message || 'Failed to register');
     }
   };
 
@@ -48,12 +48,8 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Create an account
-          </h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Start splitting expenses today
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">Create an account</h2>
+          <p className="text-sm text-muted-foreground mt-2">Start splitting expenses today</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,9 +90,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <Button type="submit" className="w-full">
             Sign Up
@@ -105,11 +99,8 @@ export default function RegisterPage() {
 
         <div className="text-center text-sm">
           <p className="text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-primary hover:underline"
-            >
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-primary hover:underline">
               Sign in
             </Link>
           </p>
