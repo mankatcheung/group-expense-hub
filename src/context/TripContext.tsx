@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Member, Expense, Trip } from '@/lib/types';
 import { api } from '@/services/api';
-import { toast } from 'sonner';
+import { handleApiError, handleApiSuccess } from '@/lib/error-handler';
 
 interface TripContextType {
   trips: Trip[];
@@ -43,9 +43,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       .catch((err) => {
         const message = err?.message || 'Failed to load trips';
         setError(message);
-        toast.error('Failed to load trips', {
-          description: 'Please try refreshing the page.',
-        });
+        handleApiError(err, 'Failed to load trips');
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -68,7 +66,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     // API call
     api.createTrip(trip).catch((err) => {
       setTrips((prev) => prev.filter((t) => t.id !== trip.id));
-      toast.error('Failed to create trip', { description: err?.message });
+      handleApiError(err, 'Failed to create trip');
     });
 
     return trip;
@@ -83,7 +81,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       // API call
       api.deleteTrip(id).catch((err) => {
         setTrips(previousTrips);
-        toast.error('Failed to delete trip', { description: err?.message });
+        handleApiError(err, 'Failed to delete trip');
       });
     },
     [trips]
@@ -94,7 +92,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       .getTrips()
       .then(setTrips)
       .catch((err) => {
-        toast.error('Failed to refresh trips', { description: err?.message });
+        handleApiError(err, 'Failed to refresh trips');
       });
   }, []);
 
@@ -109,7 +107,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       // API call
       api.updateTrip(tripId, { name: trimmed }).catch((err) => {
         refreshTrips();
-        toast.error('Failed to update trip', { description: err?.message });
+        handleApiError(err, 'Failed to update trip');
       });
     },
     [refreshTrips]
@@ -135,7 +133,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           t.id === tripId ? { ...t, members: t.members.filter((m) => m.id !== member.id) } : t
         )
       );
-      toast.error('Failed to add member', { description: err?.message });
+      handleApiError(err, 'Failed to add member');
     });
   }, []);
 
@@ -151,7 +149,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       api.updateMember(tripId, memberId, { name }).catch((err) => {
         refreshTrips();
-        toast.error('Failed to update member', { description: err?.message });
+        handleApiError(err, 'Failed to update member');
       });
     },
     [refreshTrips]
@@ -200,7 +198,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expense.id) } : t
         )
       );
-      toast.error('Failed to add expense', { description: err?.message });
+      handleApiError(err, 'Failed to add expense');
     });
   }, []);
 
@@ -214,7 +212,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     );
     api.updateExpense(tripId, expense).catch((err) => {
       refreshTrips();
-      toast.error('Failed to update expense', { description: err?.message });
+      handleApiError(err, 'Failed to update expense');
     });
   }, []);
 
@@ -229,7 +227,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     // API call
     api.removeExpense(tripId, expenseId).catch((err) => {
       refreshTrips();
-      toast.error('Failed to remove expense', { description: err?.message });
+      handleApiError(err, 'Failed to remove expense');
     });
   }, []);
 
@@ -270,7 +268,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
     api.removeCollaborator(tripId, memberId).catch((err) => {
       refreshTrips();
-      toast.error('Failed to remove collaborator', { description: err?.message });
+      handleApiError(err, 'Failed to remove collaborator');
     });
   }, []);
 
