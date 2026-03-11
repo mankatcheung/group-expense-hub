@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane } from 'lucide-react';
+import { handleApiError } from '@/lib/error-handler';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -36,8 +37,8 @@ export default function RegisterPage() {
     try {
       await register(name, email, password);
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to register');
+    } catch (err) {
+      handleApiError(err, 'Failed to register');
     }
   };
 

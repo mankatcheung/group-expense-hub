@@ -9,6 +9,7 @@ import { authClient } from '@/lib/auth-client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane } from 'lucide-react';
+import { handleApiError } from '@/lib/error-handler';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -49,8 +50,8 @@ function ResetPasswordContent() {
 
       setSuccess(true);
       setTimeout(() => router.push('/login'), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reset password');
+    } catch (err) {
+      handleApiError(err, 'Failed to reset password');
     } finally {
       setLoading(false);
     }

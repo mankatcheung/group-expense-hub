@@ -9,11 +9,11 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane } from 'lucide-react';
+import { handleApiError } from '@/lib/error-handler';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -24,12 +24,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     try {
       await login(email, password);
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to login');
+    } catch (err) {
+      handleApiError(err, 'Failed to login');
     }
   };
 
@@ -65,8 +64,6 @@ export default function LoginPage() {
               required
             />
           </div>
-
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <Button type="submit" className="w-full">
             Sign In

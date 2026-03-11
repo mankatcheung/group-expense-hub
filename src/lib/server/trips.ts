@@ -1,6 +1,12 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
+import {
+  PrismaClient,
+  Trip as PrismaTrip,
+  Member as PrismaMember,
+  Expense as PrismaExpense,
+  TripMember as PrismaTripMember,
+} from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { rateLimit } from '@/lib/ratelimit';
 
@@ -89,7 +95,54 @@ async function canEditTrip(tripId: string, userId: string) {
   return access === 'owner' || access === 'collaborator';
 }
 
-function formatTrip(trip: any, userId: string) {
+interface FormattedMember {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface FormattedTripMember {
+  id: string;
+  userId: string;
+  role: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+}
+
+interface FormattedExpense {
+  id: string;
+  description: string;
+  amount: number;
+  currency: string;
+  date: string;
+  paidBy: string;
+  splitAmong: string[];
+}
+
+function formatTrip(
+  trip: PrismaTrip & {
+    user?: { id: string; name: string | null; email: string; image: string | null } | null;
+    members: PrismaMember[];
+    tripMembers: (PrismaTripMember & {
+      user: { id: string; name: string | null; email: string; image: string | null };
+    })[];
+    expenses: (PrismaExpense & { paidById: string; splits: { memberId: string }[] })[];
+  },
+  userId: string
+): {
+  id: string;
+  name: string;
+  createdAt: string;
+  isOwner: boolean;
+  owner: { id: string; name: string | null; email: string; image: string | null } | null;
+  members: FormattedMember[];
+  tripMembers: FormattedTripMember[];
+  expenses: FormattedExpense[];
+} {
   return {
     id: trip.id,
     name: trip.name,
@@ -103,12 +156,12 @@ function formatTrip(trip: any, userId: string) {
           image: trip.user.image,
         }
       : null,
-    members: trip.members.map((m: any) => ({
+    members: trip.members.map((m) => ({
       id: m.id,
       name: m.name,
       color: m.color,
     })),
-    tripMembers: trip.tripMembers.map((tm: any) => ({
+    tripMembers: trip.tripMembers.map((tm) => ({
       id: tm.id,
       userId: tm.userId,
       role: tm.role,
@@ -119,14 +172,14 @@ function formatTrip(trip: any, userId: string) {
         image: tm.user.image,
       },
     })),
-    expenses: trip.expenses.map((e: any) => ({
+    expenses: trip.expenses.map((e) => ({
       id: e.id,
       description: e.description,
       amount: e.amount,
       currency: e.currency,
       date: e.date.toISOString(),
       paidBy: e.paidById,
-      splitAmong: e.splits.map((s: any) => s.memberId),
+      splitAmong: e.splits.map((s) => s.memberId),
     })),
   };
 }

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import Header from '@/components/Header';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { handleApiError } from '@/lib/error-handler';
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -38,8 +39,8 @@ export default function SettingsPage() {
       await api.updateUserProfile(updateData);
       await refreshUser();
       toast.success('Profile updated successfully');
-    } catch (err: any) {
-      setError(err?.message || 'Failed to update profile');
+    } catch (err) {
+      handleApiError(err, 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
@@ -73,8 +74,8 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Password changed successfully');
-    } catch (err: any) {
-      setPasswordError(err?.message || 'Failed to change password');
+    } catch (err) {
+      handleApiError(err, 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
     }

@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane } from 'lucide-react';
+import { handleApiError } from '@/lib/error-handler';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -40,8 +41,8 @@ export default function ForgotPasswordPage() {
       }
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send reset email');
+    } catch (err) {
+      handleApiError(err, 'Failed to send reset email');
     } finally {
       setLoading(false);
     }

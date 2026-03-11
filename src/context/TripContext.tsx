@@ -1,7 +1,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { Member, Expense, Trip } from '@/lib/types';
+import { Member, Expense, Trip, TripUser } from '@/lib/types';
 import { api } from '@/services/api';
 import { handleApiError, handleApiSuccess } from '@/lib/error-handler';
+
+export interface InviteMemberResponse {
+  success: boolean;
+  pending?: boolean;
+  message?: string;
+  user?: TripUser;
+  member?: {
+    id: string;
+    name: string;
+    color: string;
+  };
+}
 
 interface TripContextType {
   trips: Trip[];
@@ -21,7 +33,7 @@ interface TripContextType {
   addExpense: (tripId: string, expense: Expense) => void;
   updateExpense: (tripId: string, expense: Expense) => void;
   removeExpense: (tripId: string, expenseId: string) => void;
-  inviteMember: (tripId: string, email: string) => Promise<{ success: boolean; user?: any }>;
+  inviteMember: (tripId: string, email: string) => Promise<InviteMemberResponse>;
   removeCollaborator: (tripId: string, memberId: string) => void;
   refreshTrips: () => void;
 }

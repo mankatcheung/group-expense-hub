@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Mail, UserPlus, Loader2 } from 'lucide-react';
+import { handleApiError } from '@/lib/error-handler';
 
 interface Props {
   open: boolean;
@@ -37,8 +38,8 @@ export default function InviteMemberDialog({ open, onOpenChange, onInvite }: Pro
         onOpenChange(false);
         setSuccess('');
       }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to send invitation');
+    } catch (err) {
+      handleApiError(err, 'Failed to send invitation');
     } finally {
       setLoading(false);
     }

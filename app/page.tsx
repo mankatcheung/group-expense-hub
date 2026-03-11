@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/Header';
 import { TripCardSkeleton, InvitationSkeleton } from '@/components/Skeletons';
+import { handleApiError } from '@/lib/error-handler';
 import {
   Plus,
   Trash2,
@@ -73,8 +74,8 @@ function IndexContent() {
     try {
       const data = await api.getInvitations();
       setInvitations(data);
-    } catch (error: any) {
-      toast.error('Failed to load invitations', { description: error?.message });
+    } catch (err) {
+      handleApiError(err, 'Failed to load invitations');
     } finally {
       setLoadingInvitations(false);
     }
@@ -85,8 +86,8 @@ function IndexContent() {
       const result = await api.joinTrip(token);
       refreshTrips();
       router.push(`/trip/${result.tripId}`);
-    } catch (error: any) {
-      toast.error('Failed to join trip', { description: error?.message });
+    } catch (err) {
+      handleApiError(err, 'Failed to join trip');
     }
   };
 
@@ -97,8 +98,8 @@ function IndexContent() {
       refreshTrips();
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
       router.push(`/trip/${result.tripId}`);
-    } catch (error: any) {
-      toast.error('Failed to accept invitation', { description: error?.message });
+    } catch (err) {
+      handleApiError(err, 'Failed to accept invitation');
     } finally {
       setAcceptingId(null);
     }

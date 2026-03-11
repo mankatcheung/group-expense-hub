@@ -28,16 +28,14 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
-        <p className="text-muted-foreground">
-          An unexpected error occurred. Please try again.
-        </p>
+        <p className="text-muted-foreground">An unexpected error occurred. Please try again.</p>
         {process.env.NODE_ENV === 'development' && (
           <pre className="mt-4 p-4 bg-muted rounded-lg text-left text-xs overflow-auto max-h-32">
             {error.message}
           </pre>
         )}
         <div className="flex gap-2 justify-center pt-4">
-          <Button variant="outline" onClick={() => window.location.href = '/'}>
+          <Button variant="outline" onClick={() => (window.location.href = '/')}>
             Go Home
           </Button>
           <Button onClick={reset}>Try Again</Button>
