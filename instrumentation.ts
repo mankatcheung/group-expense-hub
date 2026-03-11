@@ -1,6 +1,12 @@
 import * as Sentry from '@sentry/nextjs';
 
+const isSentryEnabled = process.env.NODE_ENV === 'production' && Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
 export async function register() {
+  if (!isSentryEnabled) {
+    return;
+  }
+
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('./sentry.server.config');
   }
@@ -10,4 +16,4 @@ export async function register() {
   }
 }
 
-export const onRequestError = Sentry.captureRequestError;
+export const onRequestError = isSentryEnabled ? Sentry.captureRequestError : () => {};
