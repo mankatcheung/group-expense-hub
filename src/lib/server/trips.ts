@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
+import { rateLimit } from '@/lib/ratelimit';
 
 const createPrismaClient = () => {
   const adapter = new PrismaLibSql({
@@ -495,6 +496,11 @@ function getRandomColor() {
 export async function inviteMember(tripId: string, email: string) {
   const session = await getSession();
 
+  const rateLimitResult = await rateLimit.email.limit(session.user.id);
+  if (!rateLimitResult.success) {
+    throw new Error('Too many requests. Please try again later.');
+  }
+
   const access = await getTripAccessLevel(tripId, session.user.id);
   if (access !== 'owner') {
     throw new Error('Only the owner can invite members');
@@ -834,6 +840,11 @@ export async function updateUserProfile(data: { name?: string; email?: string })
   const session = await getSession();
   const userId = session.user.id;
 
+  const rateLimitResult = await rateLimit.auth.limit(userId);
+  if (!rateLimitResult.success) {
+    throw new Error('Too many requests. Please try again later.');
+  }
+
   if (data.name) {
     await getPrisma().user.update({
       where: { id: userId },
@@ -862,6 +873,11 @@ export async function updateUserProfile(data: { name?: string; email?: string })
 
 export async function changePassword(currentPassword: string, newPassword: string) {
   const session = await getSession();
+
+  const rateLimitResult = await rateLimit.auth.limit(session.user.id);
+  if (!rateLimitResult.success) {
+    throw new Error('Too many requests. Please try again later.');
+  }
 
   await auth.api.changePassword({
     body: {
