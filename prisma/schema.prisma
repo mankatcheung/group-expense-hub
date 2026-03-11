@@ -35,6 +35,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
@@ -55,6 +57,7 @@ model Account {
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
+  @@index([userId])
 }
 
 model Verification {
@@ -67,6 +70,7 @@ model Verification {
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([identifier, value])
+  @@index([userId])
 }
 
 model Trip {
@@ -79,6 +83,8 @@ model Trip {
   expenses  Expense[]
   tripMembers TripMember[]
   invitations TripInvitation[]
+
+  @@index([userId])
 }
 
 model TripMember {
@@ -91,6 +97,8 @@ model TripMember {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tripId, userId])
+  @@index([tripId])
+  @@index([userId])
 }
 
 model TripInvitation {
@@ -107,6 +115,8 @@ model TripInvitation {
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tripId, email])
+  @@index([tripId])
+  @@index([userId])
 }
 
 model Member {
@@ -121,6 +131,8 @@ model Member {
 
   // Expenses this member splits
   expenseSplits ExpenseSplit[]
+
+  @@index([tripId])
 }
 
 model Expense {
@@ -137,6 +149,9 @@ model Expense {
   paidBy   Member @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
 
   splits ExpenseSplit[]
+
+  @@index([tripId])
+  @@index([paidById])
 }
 
 model ExpenseSplit {
