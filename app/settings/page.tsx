@@ -29,10 +29,13 @@ export default function SettingsPage() {
     setIsSaving(true);
     
     try {
-      await api.updateUserProfile({
-        name: name.trim() || undefined,
-        email: email.trim() || undefined,
-      });
+      const updateData: { name?: string; email?: string } = {};
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+      if (trimmedName) updateData.name = trimmedName;
+      if (trimmedEmail) updateData.email = trimmedEmail;
+      
+      await api.updateUserProfile(updateData);
       await refreshUser();
       toast.success("Profile updated successfully");
     } catch (err: any) {

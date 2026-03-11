@@ -6,9 +6,12 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { nextCookies } from "better-auth/next-js";
 import { sendPasswordResetEmail } from "./email";
 
+const dbUrl = process.env.TURSO_DATABASE_URL || "file:./dev.db";
+const authToken = process.env.TURSO_AUTH_TOKEN;
+
 const adapter = new PrismaLibSql({
-  url: process.env.TURSO_DATABASE_URL || "file:./dev.db",
-  authToken: process.env.TURSO_AUTH_TOKEN,
+  url: dbUrl,
+  ...(authToken ? { authToken } : {}),
 });
 const prisma = new PrismaClient({ adapter });
 

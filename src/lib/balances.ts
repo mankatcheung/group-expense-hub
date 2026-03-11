@@ -36,19 +36,23 @@ export function calculateBalances(expenses: Expense[]): Balance[] {
 
     let i = 0, j = 0;
     while (i < debtors.length && j < creditors.length) {
-      const transfer = Math.min(debtors[i].amount, creditors[j].amount);
+      const debtor = debtors[i];
+      const creditor = creditors[j];
+      if (!debtor || !creditor) break;
+      
+      const transfer = Math.min(debtor.amount, creditor.amount);
       if (transfer > 0.01) {
         allBalances.push({
-          from: debtors[i].id,
-          to: creditors[j].id,
+          from: debtor.id,
+          to: creditor.id,
           amount: Math.round(transfer * 100) / 100,
           currency,
         });
       }
-      debtors[i].amount -= transfer;
-      creditors[j].amount -= transfer;
-      if (debtors[i].amount < 0.01) i++;
-      if (creditors[j].amount < 0.01) j++;
+      debtors[i]!.amount -= transfer;
+      creditors[j]!.amount -= transfer;
+      if (debtors[i]!.amount < 0.01) i++;
+      if (creditors[j]!.amount < 0.01) j++;
     }
   }
 

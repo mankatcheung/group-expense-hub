@@ -509,7 +509,8 @@ const COLORS = [
 ];
 
 function getRandomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+  const index = Math.floor(Math.random() * COLORS.length);
+  return COLORS[index] ?? "#16553b";
 }
 
 export async function inviteMember(tripId: string, email: string) {
@@ -618,7 +619,7 @@ export async function inviteMember(tripId: string, email: string) {
     getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
-        name: user.name || user.email.split("@")[0],
+        name: user.name ?? user.email.split("@")[0] ?? "User",
         color: getRandomColor(),
         tripId,
       },
@@ -727,9 +728,10 @@ export async function joinTrip(token: string) {
   });
 
   const existingNames = new Set(tripMembers.map((m) => m.name.toLowerCase()));
-  const proposedName = user?.name || user?.email.split("@")[0] || "User";
+  const emailPrefix = user?.email?.split("@")[0] ?? "User";
+  const proposedName = user?.name ?? emailPrefix;
   const memberName = existingNames.has(proposedName.toLowerCase())
-    ? user?.email.split("@")[0] || "User"
+    ? emailPrefix
     : proposedName;
 
   await getPrisma().$transaction([
@@ -836,7 +838,7 @@ export async function acceptInvitation(id: string) {
     getPrisma().member.create({
       data: {
         id: crypto.randomUUID(),
-        name: session.user.name || session.user.email.split("@")[0],
+        name: session.user.name ?? session.user.email.split("@")[0] ?? "User",
         color: getRandomColor(),
         tripId: invitation.tripId,
       },

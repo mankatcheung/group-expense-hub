@@ -62,10 +62,11 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
       return;
     }
     setError("");
+    const colorIndex = members.length % MEMBER_COLORS.length;
     onAdd({
       id: crypto.randomUUID(),
       name: trimmed,
-      color: MEMBER_COLORS[members.length % MEMBER_COLORS.length],
+      color: MEMBER_COLORS[colorIndex] ?? "#16553b",
     });
     setName("");
   };
