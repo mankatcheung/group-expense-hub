@@ -1,3 +1,12 @@
+import {
+  passwordResetTemplate,
+  passwordResetSubject,
+  tripInvitationTemplate,
+  tripInvitationSubject,
+  tripAddedTemplate,
+  tripAddedSubject,
+} from './emails';
+
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const APP_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@group-expense-hub.com';
@@ -72,39 +81,6 @@ export function getAppUrl() {
   return APP_URL;
 }
 
-export function getEmailTemplate({
-  title,
-  body,
-  cta,
-  ctaUrl,
-}: {
-  title: string;
-  body: string;
-  cta?: string;
-  ctaUrl?: string;
-}) {
-  const sanitizedTitle = escapeHtml(title);
-  const sanitizedBody = body;
-  const sanitizedCta = cta ? escapeHtml(cta) : '';
-  const sanitizedCtaUrl = ctaUrl ? sanitizeUrl(ctaUrl) : '';
-
-  const ctaHtml =
-    sanitizedCta && sanitizedCtaUrl
-      ? `
-      <a href="${sanitizedCtaUrl}" style="display: inline-block; background: #16553b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">${sanitizedCta}</a>
-    `
-      : '';
-
-  return `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>${sanitizedTitle}</h1>
-      ${sanitizedBody}
-      ${ctaHtml}
-      <p style="color: #888; font-size: 12px; margin-top: 24px;">If you didn't request this, please ignore this email.</p>
-    </div>
-  `;
-}
-
 export async function sendPasswordResetEmail({
   to,
   name,
@@ -119,21 +95,14 @@ export async function sendPasswordResetEmail({
     throw new Error('Invalid reset URL');
   }
 
-  const html = getEmailTemplate({
-    title: 'Reset Your Password',
-    body: `
-      <p>Hi ${escapeHtml(name || 'there')},</p>
-      <p>Click the button below to reset your password:</p>
-      <p>Or copy and paste this link: ${sanitizedResetUrl}</p>
-      <p>This link expires in 1 hour.</p>
-    `,
-    cta: 'Reset Password',
-    ctaUrl: sanitizedResetUrl,
+  const html = passwordResetTemplate({
+    name: name ? escapeHtml(name) : null,
+    resetUrl: sanitizedResetUrl,
   });
 
   await sendEmail({
     to,
-    subject: 'Reset Your Password - Group Expense Hub',
+    subject: passwordResetSubject,
     html,
   });
 }
@@ -154,22 +123,15 @@ export async function sendTripInvitationEmail({
     throw new Error('Invalid invitation URL');
   }
 
-  const html = getEmailTemplate({
-    title: "You've been invited!",
-    body: `
-      <p>Hi,</p>
-      <p><strong>${escapeHtml(inviterName)}</strong> has invited you to join their trip "<strong>${escapeHtml(tripName)}</strong>" on Group Expense Hub.</p>
-      <p>Click the button below to join the trip:</p>
-      <p>Or copy and paste this link: ${sanitizedInviteUrl}</p>
-      <p>This invitation expires in 7 days.</p>
-    `,
-    cta: 'Join Trip',
-    ctaUrl: sanitizedInviteUrl,
+  const html = tripInvitationTemplate({
+    inviterName: escapeHtml(inviterName),
+    tripName: escapeHtml(tripName),
+    inviteUrl: sanitizedInviteUrl,
   });
 
   await sendEmail({
     to,
-    subject: `You've been invited to join "${escapeHtml(tripName)}" - Group Expense Hub`,
+    subject: tripInvitationSubject(escapeHtml(tripName)),
     html,
   });
 }
@@ -192,20 +154,17 @@ export async function sendTripAddedNotification({
     throw new Error('Invalid trip URL');
   }
 
-  const html = getEmailTemplate({
-    title: "You've been added to a trip!",
-    body: `
-      <p>Hi ${escapeHtml(name || to.split('@')[0])},</p>
-      <p><strong>${escapeHtml(inviterName)}</strong> has added you as a collaborator to their trip "<strong>${escapeHtml(tripName)}</strong>" on Group Expense Hub.</p>
-      <p>You can now view and manage expenses for this trip.</p>
-    `,
-    cta: 'View Trip',
-    ctaUrl: sanitizedTripUrl,
+  const html = tripAddedTemplate({
+    name: name ? escapeHtml(name) : null,
+    email: to,
+    inviterName: escapeHtml(inviterName),
+    tripName: escapeHtml(tripName),
+    tripUrl: sanitizedTripUrl,
   });
 
   await sendEmail({
     to,
-    subject: `You've been added to "${escapeHtml(tripName)}" - Group Expense Hub`,
+    subject: tripAddedSubject(escapeHtml(tripName)),
     html,
   });
 }
