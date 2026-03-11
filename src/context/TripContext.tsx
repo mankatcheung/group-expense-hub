@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Member, Expense, Trip, TripUser } from '@/lib/types';
 import { api } from '@/services/api';
 import { handleApiError, handleApiSuccess } from '@/lib/error-handler';
+import { CACHE } from '@/lib/constants';
 
 export interface InviteMemberResponse {
   success: boolean;
@@ -49,8 +50,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const { data: trips = [], isLoading, error } = useQuery({
     queryKey: TRIPS_KEY,
     queryFn: () => api.getTrips(),
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
+    staleTime: CACHE.TRIPS_STALE_TIME,
+    gcTime: CACHE.TRIPS_GC_TIME,
   });
 
   const createTripMutation = useMutation({

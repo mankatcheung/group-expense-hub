@@ -1,0 +1,34 @@
+export const TIME = {
+  SECONDS: {
+    ONE_MINUTE: 60,
+    ONE_HOUR: 60 * 60,
+    ONE_DAY: 60 * 60 * 24,
+    ONE_WEEK: 60 * 60 * 24 * 7,
+  },
+  MILLISECONDS: {
+    ONE_MINUTE: 60 * 1000,
+    FIVE_MINUTES: 5 * 60 * 1000,
+    THIRTY_MINUTES: 30 * 60 * 1000,
+    ONE_HOUR: 60 * 60 * 1000,
+    ONE_DAY: 60 * 60 * 24 * 1000,
+    ONE_WEEK: 60 * 60 * 24 * 7 * 1000,
+  },
+} as const;
+
+export const CACHE = {
+  TRIPS_STALE_TIME: TIME.MILLISECONDS.FIVE_MINUTES,
+  TRIPS_GC_TIME: TIME.MILLISECONDS.THIRTY_MINUTES,
+} as const;
+
+export const SESSION = {
+  EXPIRES_IN: TIME.SECONDS.ONE_WEEK,
+  UPDATE_AGE: TIME.SECONDS.ONE_DAY,
+} as const;
+
+export const INVITATION = {
+  EXPIRES_IN: TIME.MILLISECONDS.ONE_WEEK,
+} as const;
+
+export const PASSWORD_RESET = {
+  EXPIRES_IN: TIME.MILLISECONDS.ONE_HOUR,
+} as const;

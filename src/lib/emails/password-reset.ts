@@ -1,4 +1,5 @@
 import { baseTemplate } from './base';
+import { PASSWORD_RESET, TIME } from '../constants';
 
 export const passwordResetTemplate = ({
   name,
@@ -13,7 +14,7 @@ export const passwordResetTemplate = ({
       <p>Hi ${name || 'there'},</p>
       <p>Click the button below to reset your password:</p>
       <p>Or copy and paste this link: ${resetUrl}</p>
-      <p>This link expires in 1 hour.</p>
+      <p>This link expires in ${TIME.SECONDS.ONE_HOUR / 60 / 60} hour.</p>
     `,
     cta: 'Reset Password',
     ctaUrl: resetUrl,

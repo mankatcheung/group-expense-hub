@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { rateLimit } from '@/lib/ratelimit';
+import { INVITATION } from '@/lib/constants';
 
 const createPrismaClient = () => {
   const adapter = new PrismaLibSql({
@@ -602,14 +603,14 @@ export async function inviteMember(tripId: string, email: string) {
         },
       },
       update: {
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + INVITATION.EXPIRES_IN),
         status: 'pending',
         token,
       },
       create: {
         tripId,
         email,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + INVITATION.EXPIRES_IN),
         token,
       },
     });
