@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Expense, Member } from '@/lib/types';
 import { getCurrencySymbol } from '@/lib/currencies';
 import { Trash2, Pencil, List, Calendar } from 'lucide-react';
@@ -20,6 +21,10 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
   const getMember = (id: string) => members.find((m) => m.id === id);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('date');
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLDivElement>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Expense[]>();
@@ -31,16 +36,34 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
     return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]));
   }, [expenses]);
 
+  const currentTab =
+    activeTab && grouped.some(([d]) => d === activeTab) ? activeTab : grouped[0]?.[0];
+
+  const currentGroupExpenses = useMemo(() => {
+    if (!currentTab) return [];
+    const group = grouped.find(([d]) => d === currentTab);
+    return group?.[1] ?? [];
+  }, [currentTab, grouped]);
+
   const sortedExpenses = useMemo(() => {
     return [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [expenses]);
 
-  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
+  const virtualizer = useVirtualizer({
+    count: sortedExpenses.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
+
+  const groupVirtualizer = useVirtualizer({
+    count: currentGroupExpenses.length,
+    getScrollElement: () => activeTabRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
 
   if (expenses.length === 0) return null;
-
-  const currentTab =
-    activeTab && grouped.some(([d]) => d === activeTab) ? activeTab : grouped[0]?.[0];
 
   const renderExpenseItem = (e: Expense) => {
     const payer = getMember(e.paidBy);
@@ -133,13 +156,87 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
           </TabsList>
 
           {grouped.map(([date, items]) => (
-            <TabsContent key={date} value={date} className="space-y-2">
-              {items.map(renderExpenseItem)}
+            <TabsContent key={date} value={date}>
+              {items.length > 50 ? (
+                <div
+                  ref={activeTabRef}
+                  className="space-y-2"
+                  style={{
+                    height: Math.min(items.length * 80, 400),
+                    overflow: 'auto',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: `${groupVirtualizer.getTotalSize()}px`,
+                      width: '100%',
+                      position: 'relative',
+                    }}
+                  >
+                    {groupVirtualizer.getVirtualItems().map((virtualRow) => (
+                      <div
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={groupVirtualizer.measureElement}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        {renderExpenseItem(items[virtualRow.index])}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">{items.map(renderExpenseItem)}</div>
+              )}
             </TabsContent>
           ))}
         </Tabs>
       ) : (
-        <div className="space-y-2">{sortedExpenses.map(renderExpenseItem)}</div>
+        <div>
+          {sortedExpenses.length > 50 ? (
+            <div
+              ref={parentRef}
+              className="space-y-2"
+              style={{
+                height: Math.min(sortedExpenses.length * 80, 400),
+                overflow: 'auto',
+              }}
+            >
+              <div
+                style={{
+                  height: `${virtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {virtualizer.getVirtualItems().map((virtualRow) => (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    {renderExpenseItem(sortedExpenses[virtualRow.index])}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">{sortedExpenses.map(renderExpenseItem)}</div>
+          )}
+        </div>
       )}
 
       {editingExpense && (
