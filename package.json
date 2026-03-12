@@ -17,9 +17,7 @@
     "db:push": "pnpm --filter @group-expense-hub/db db:push"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.3.3"
+    "concurrently": "^9.2.1"
   },
   "engines": {
     "node": ">=18"
