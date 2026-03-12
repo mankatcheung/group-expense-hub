@@ -45,7 +45,7 @@ export default async function invitationsRouter(fastify: FastifyInstance) {
       },
     });
 
-    return invitations.map((inv) => ({
+    return invitations.map(inv => ({
       id: inv.id,
       token: inv.token,
       tripId: inv.tripId,

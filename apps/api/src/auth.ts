@@ -17,7 +17,6 @@ const adapter = new PrismaLibSql({
 const prisma = new PrismaClient({ adapter });
 
 // Using any for better-auth - types are complex to extract
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const auth: any = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'sqlite',

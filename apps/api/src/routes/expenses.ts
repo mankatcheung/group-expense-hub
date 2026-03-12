@@ -31,7 +31,7 @@ export default async function expensesRouter(fastify: FastifyInstance) {
         date: body.date ? new Date(body.date) : undefined,
         tripId,
         paidById: body.paidBy,
-        splits: { create: body.splitAmong.map((memberId) => ({ memberId })) },
+        splits: { create: body.splitAmong.map(memberId => ({ memberId })) },
       },
     });
 
@@ -64,7 +64,7 @@ export default async function expensesRouter(fastify: FastifyInstance) {
         date: body.date ? new Date(body.date) : undefined,
         tripId,
         paidById: body.paidBy,
-        splits: { deleteMany: {}, create: body.splitAmong.map((memberId) => ({ memberId })) },
+        splits: { deleteMany: {}, create: body.splitAmong.map(memberId => ({ memberId })) },
       },
     });
 

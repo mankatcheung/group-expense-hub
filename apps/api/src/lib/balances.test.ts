@@ -175,8 +175,8 @@ describe('calculateBalances', () => {
 
     const result = calculateBalances(expenses);
 
-    const usdBalances = result.filter((b) => b.currency === 'USD');
-    const eurBalances = result.filter((b) => b.currency === 'EUR');
+    const usdBalances = result.filter(b => b.currency === 'USD');
+    const eurBalances = result.filter(b => b.currency === 'EUR');
 
     expect(usdBalances).toHaveLength(1);
     expect(eurBalances).toHaveLength(1);
@@ -200,7 +200,7 @@ describe('calculateBalances', () => {
     const result = calculateBalances(expenses);
 
     expect(result).toHaveLength(2);
-    result.forEach((balance) => {
+    result.forEach(balance => {
       expect(balance.amount).toBeCloseTo(33.33, 2);
     });
   });

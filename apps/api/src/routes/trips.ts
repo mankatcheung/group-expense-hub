@@ -97,7 +97,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     });
 
     const collaboratorTrips = await prisma.trip.findMany({
-      where: { id: { in: collaboratorTripIds.map((t) => t.tripId) } },
+      where: { id: { in: collaboratorTripIds.map(t => t.tripId) } },
       include: {
         members: true,
         expenses: { include: { splits: true } },
@@ -107,7 +107,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return [...ownedTrips, ...collaboratorTrips].map((trip) => formatTrip(trip, user.id));
+    return [...ownedTrips, ...collaboratorTrips].map(trip => formatTrip(trip, user.id));
   });
 
   fastify.post('/', async (request: FastifyRequest, _reply: FastifyReply) => {
@@ -349,7 +349,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
       where: { tripId: invitation.tripId },
       select: { name: true },
     });
-    const existingNames = new Set(tripMembers.map((m) => m.name.toLowerCase()));
+    const existingNames = new Set(tripMembers.map(m => m.name.toLowerCase()));
     const emailPrefix = userData?.email?.split('@')[0] ?? 'User';
     const proposedName = userData?.name ?? emailPrefix;
     const memberName = existingNames.has(proposedName.toLowerCase()) ? emailPrefix : proposedName;

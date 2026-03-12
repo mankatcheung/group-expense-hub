@@ -17,7 +17,7 @@ function escapeHtml(str: string): string {
     '"': '&quot;',
     "'": '&#39;',
   };
-  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char);
+  return str.replace(/[&<>"']/g, char => htmlEscapes[char] || char);
 }
 
 function sanitizeUrl(url: string): string {
