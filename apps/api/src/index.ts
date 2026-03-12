@@ -37,7 +37,7 @@ const fastify = Fastify({
   genReqId: () => Math.random().toString(36).substring(2, 15),
 });
 
-fastify.addHook('onRequest', async (request, reply) => {
+fastify.addHook('onRequest', async (request, _reply) => {
   request.log.info({ url: request.url, method: request.method }, 'Incoming request');
 });
 

@@ -42,7 +42,6 @@ export default async function userRouter(fastify: FastifyInstance) {
   // POST /api/user/password - Change password
   fastify.post('/password', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
-    const body = request.body as { currentPassword: string; newPassword: string };
 
     const rateLimitResult = await rateLimit.auth.limit(user.id);
     if (!rateLimitResult.success) {

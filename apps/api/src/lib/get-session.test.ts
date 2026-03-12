@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { getSession, getUserFromRequest } from '../lib/get-session.js';
 import { auth } from '../auth.js';
 

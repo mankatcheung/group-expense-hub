@@ -1,50 +1,36 @@
 name: CI
 
 on:
+  push:
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
 
 jobs:
-  check:
+  lint-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 20
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Lint
+        run: pnpm turbo lint
 
-      - name: Run linter
-        run: pnpm lint
+      - name: Typecheck
+        run: pnpm turbo typecheck
 
-      - name: TypeScript type check
-        run: pnpm typecheck
-
-      - name: Run tests
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
-        env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      - name: Test
+        run: pnpm turbo test

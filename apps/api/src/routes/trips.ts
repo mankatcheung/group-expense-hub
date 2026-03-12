@@ -77,7 +77,7 @@ function formatTrip(trip: any, userId: string) {
 }
 
 export default async function tripsRouter(fastify: FastifyInstance) {
-  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/', async (request: FastifyRequest, _reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
 
     const ownedTrips = await prisma.trip.findMany({
@@ -110,7 +110,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     return [...ownedTrips, ...collaboratorTrips].map((trip) => formatTrip(trip, user.id));
   });
 
-  fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/', async (request: FastifyRequest, _reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
     const body = request.body as { id: string; name: string; createdAt?: string };
 
@@ -174,7 +174,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     return prisma.trip.update({ where: { id }, data: { name: body.name } });
   });
 
-  fastify.delete('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.delete('/:id', async (request: FastifyRequest, _reply: FastifyReply) => {
     const { id } = request.params as { id: string };
     const user = await getUserFromRequest(request);
 

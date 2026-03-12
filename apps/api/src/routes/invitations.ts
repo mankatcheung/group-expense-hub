@@ -20,7 +20,7 @@ function getRandomColor() {
 
 export default async function invitationsRouter(fastify: FastifyInstance) {
   // GET /api/invitations - Get pending invitations
-  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/', async (request: FastifyRequest, _reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
 
     const invitations = await prisma.tripInvitation.findMany({
