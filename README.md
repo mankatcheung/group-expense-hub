@@ -49,7 +49,7 @@ A modern web application for splitting group travel expenses with friends. No mo
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- pnpm
 
 ### Installation
 
@@ -59,13 +59,13 @@ git clone https://github.com/yourusername/group-expense-hub.git
 cd group-expense-hub
 
 # Install dependencies
-npm install
+pnpm install
 
 # Generate Prisma client
-npx prisma generate
+pnpm prisma generate
 
 # Start the development server
-npm run dev
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -76,10 +76,10 @@ The project uses a SQLite database by default for local development. To set up t
 
 ```bash
 # Push Prisma schema to database
-npx prisma db push
+pnpm prisma db push
 
 # Or create a migration
-npx prisma migrate dev
+pnpm prisma migrate dev
 ```
 
 ### Environment Variables
@@ -129,11 +129,11 @@ BETTER_AUTH_SECRET=your-secret-key-here
 ## Scripts
 
 ```bash
-npm run dev       # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
-npm run test     # Run tests
+pnpm dev       # Start development server
+pnpm build    # Build for production
+pnpm start    # Start production server
+pnpm lint     # Run ESLint
+pnpm test     # Run tests
 ```
 
 ## License
