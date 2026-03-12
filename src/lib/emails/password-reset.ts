@@ -1,5 +1,5 @@
 import { baseTemplate } from './base';
-import { PASSWORD_RESET, TIME } from '../constants';
+import { TIME } from '../constants';
 
 export const passwordResetTemplate = ({
   name,

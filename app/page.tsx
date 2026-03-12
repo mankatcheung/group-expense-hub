@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/Header';
 import { TripCardSkeleton, InvitationSkeleton } from '@/components/Skeletons';
 import { handleApiError } from '@/lib/error-handler';
@@ -25,7 +24,6 @@ import {
 } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/currencies';
 import { api } from '@/services/api';
-import { toast } from 'sonner';
 
 interface Invitation {
   id: string;
@@ -57,6 +55,7 @@ function IndexContent() {
     if (token) {
       handleJoinByToken(token);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {

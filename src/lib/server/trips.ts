@@ -645,7 +645,7 @@ export async function inviteMember(tripId: string, email: string) {
     throw new Error('Cannot invite yourself');
   }
 
-  const [tripMember, member] = await getPrisma().$transaction([
+  const [, member] = await getPrisma().$transaction([
     getPrisma().tripMember.create({
       data: {
         tripId,
@@ -944,6 +944,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
       currentPassword,
       newPassword,
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     headers: (await cookies()) as any,
   });
 

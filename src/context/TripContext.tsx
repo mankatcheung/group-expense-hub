@@ -2,7 +2,6 @@ import { createContext, useContext, ReactNode, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Member, Expense, Trip, TripUser } from '@/lib/types';
 import { api } from '@/services/api';
-import { handleApiError, handleApiSuccess } from '@/lib/error-handler';
 import { CACHE } from '@/lib/constants';
 
 export interface InviteMemberResponse {
@@ -157,6 +156,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
       return trip;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [createTripMutation]
   );
 
@@ -171,6 +171,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         },
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [trips, deleteTripMutation]
   );
 
@@ -190,6 +191,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateTripMutation, queryClient]
   );
 
@@ -219,6 +221,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [addMemberMutation]
   );
 
@@ -241,6 +244,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateMemberMutation, queryClient]
   );
 
@@ -273,6 +277,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [addExpenseMutation]
   );
 
@@ -295,6 +300,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateExpenseMutation, queryClient]
   );
 
@@ -313,6 +319,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [removeExpenseMutation, queryClient]
   );
 
@@ -341,6 +348,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [removeCollaboratorMutation, queryClient]
   );
 

@@ -25,8 +25,6 @@ import {
   validateTripResponse,
   validateInviteMemberResponse,
   validateRemoveMemberResponse,
-  safeParseTripsResponse,
-  safeParseTripResponse,
 } from '@/lib/schemas';
 import { handleApiError } from '@/lib/error-handler';
 

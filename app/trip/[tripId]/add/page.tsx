@@ -6,8 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTrip } from '@/context/TripContext';
 import AddExpense from '@/components/AddExpense';
 import Header from '@/components/Header';
-import { PageSkeleton, FormSkeleton } from '@/components/Skeletons';
-import { Plane, ArrowLeft, AlertCircle } from 'lucide-react';
+import { FormSkeleton } from '@/components/Skeletons';
+import { Plane, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AddExpensePage() {

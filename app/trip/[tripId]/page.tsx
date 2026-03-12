@@ -11,7 +11,7 @@ import BalanceSummary from '@/components/BalanceSummary';
 import MemberManager from '@/components/MemberManager';
 import InviteMemberDialog from '@/components/InviteMemberDialog';
 import Header from '@/components/Header';
-import { PageSkeleton, BalanceSkeleton, MemberBadgeSkeleton } from '@/components/Skeletons';
+import { PageSkeleton } from '@/components/Skeletons';
 import { Plane, Plus, ArrowLeft, Users, UserMinus, Crown, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
