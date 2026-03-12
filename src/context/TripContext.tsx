@@ -46,7 +46,11 @@ const TripContext = createContext<TripContextType | null>(null);
 export function TripProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
-  const { data: trips = [], isLoading, error } = useQuery({
+  const {
+    data: trips = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: TRIPS_KEY,
     queryFn: () => api.getTrips(),
     staleTime: CACHE.TRIPS_STALE_TIME,
@@ -75,8 +79,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: ({ tripId, member }: { tripId: string; member: { id: string; name: string; color: string } }) =>
-      api.addMember(tripId, member),
+    mutationFn: ({
+      tripId,
+      member,
+    }: {
+      tripId: string;
+      member: { id: string; name: string; color: string };
+    }) => api.addMember(tripId, member),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
     },
@@ -91,8 +100,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: ({ tripId, memberId, force }: { tripId: string; memberId: string; force?: boolean }) =>
-      api.removeMember(tripId, memberId, force),
+    mutationFn: ({
+      tripId,
+      memberId,
+      force,
+    }: {
+      tripId: string;
+      memberId: string;
+      force?: boolean;
+    }) => api.removeMember(tripId, memberId, force),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRIPS_KEY });
     },
@@ -307,7 +323,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const removeExpense = useCallback(
     (tripId: string, expenseId: string) => {
       setTrips((prev) =>
-        prev.map((t) => (t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expenseId) } : t))
+        prev.map((t) =>
+          t.id === tripId ? { ...t, expenses: t.expenses.filter((e) => e.id !== expenseId) } : t
+        )
       );
 
       removeExpenseMutation.mutate(
@@ -335,7 +353,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
     (tripId: string, memberId: string) => {
       setTrips((prev) =>
         prev.map((t) =>
-          t.id === tripId ? { ...t, tripMembers: t.tripMembers.filter((m) => m.id !== memberId) } : t
+          t.id === tripId
+            ? { ...t, tripMembers: t.tripMembers.filter((m) => m.id !== memberId) }
+            : t
         )
       );
 

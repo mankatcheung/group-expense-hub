@@ -36,16 +36,10 @@ export function proxy(request: NextRequest) {
       });
 
       if (!isAllowed) {
-        return NextResponse.json(
-          { error: 'Invalid origin header' },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: 'Invalid origin header' }, { status: 403 });
       }
     } else if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'Missing origin header' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Missing origin header' }, { status: 403 });
     }
   }
 
@@ -68,7 +62,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)'],
 };

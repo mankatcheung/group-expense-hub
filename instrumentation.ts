@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nextjs';
 
-const isSentryEnabled = process.env.NODE_ENV === 'production' && Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+const isSentryEnabled =
+  process.env.NODE_ENV === 'production' && Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export async function register() {
   if (!isSentryEnabled) {

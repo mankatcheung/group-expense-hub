@@ -30,4 +30,4 @@ export const baseTemplate = ({
   `;
 };
 
-export const footerText = 'If you didn\'t request this, please ignore this email.';
+export const footerText = "If you didn't request this, please ignore this email.";

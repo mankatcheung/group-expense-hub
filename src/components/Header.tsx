@@ -52,12 +52,7 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              aria-label="User menu"
-            >
+            <Button variant="ghost" size="sm" className="gap-2" aria-label="User menu">
               <User className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">User menu</span>
               {user?.name || user?.email?.split('@')[0]}
