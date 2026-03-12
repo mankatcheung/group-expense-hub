@@ -1,74 +1,112 @@
 'use client';
 
-import {
-  getTrips as saGetTrips,
-  getTrip as saGetTrip,
-  createTrip as saCreateTrip,
-  deleteTrip as saDeleteTrip,
-  updateTrip as saUpdateTrip,
-  addMember as saAddMember,
-  updateMember as saUpdateMember,
-  removeMember as saRemoveMember,
-  addExpense as saAddExpense,
-  updateExpense as saUpdateExpense,
-  removeExpense as saRemoveExpense,
-  inviteMember as saInviteMember,
-  removeCollaborator as saRemoveCollaborator,
-  joinTrip as saJoinTrip,
-  getInvitations as saGetInvitations,
-  acceptInvitation as saAcceptInvitation,
-  updateUserProfile as saUpdateUserProfile,
-  changePassword as saChangePassword,
-} from '@/lib/server/trips';
-import {
-  validateTripsResponse,
-  validateTripResponse,
-  validateInviteMemberResponse,
-  validateRemoveMemberResponse,
-} from '@/lib/schemas';
-import { handleApiError } from '@/lib/error-handler';
+import type { Member, Trip, TripUser } from '@/lib/types';
+
+export interface InviteMemberResponse {
+  success: boolean;
+  pending?: boolean;
+  message?: string;
+  user?: TripUser;
+  member?: Member;
+}
+
+export interface RemoveMemberResponse {
+  success?: boolean;
+  error?: string;
+  expenseCount?: number;
+  memberName?: string;
+}
+
+export interface JoinTripResponse {
+  success: boolean;
+  tripId: string;
+}
+
+export interface TripInvitation {
+  id: string;
+  token: string;
+  tripId: string;
+  tripName: string;
+  inviter: TripUser;
+  createdAt: string;
+}
+
+async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(endpoint, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || 'Request failed');
+  }
+
+  return response.json();
+}
 
 export const api = {
-  getTrips: async () => {
-    const data = await saGetTrips();
-    try {
-      return validateTripsResponse(data);
-    } catch (err) {
-      handleApiError(err, 'Invalid trips response');
-      return data;
-    }
+  getTrips: async (): Promise<Trip[]> => {
+    return fetchApi<Trip[]>('/api/trips');
   },
 
-  getTrip: async (id: string) => {
-    const data = await saGetTrip(id);
-    try {
-      return validateTripResponse(data);
-    } catch (err) {
-      handleApiError(err, 'Invalid trip response');
-      return data;
-    }
+  getTrip: async (id: string): Promise<Trip> => {
+    return fetchApi<Trip>(`/api/trips/${id}`);
   },
 
-  createTrip: async (trip: { id: string; name: string; createdAt?: string }) => saCreateTrip(trip),
+  createTrip: async (trip: { id: string; name: string; createdAt?: string }): Promise<Trip> => {
+    return fetchApi<Trip>('/api/trips', {
+      method: 'POST',
+      body: JSON.stringify(trip),
+    });
+  },
 
-  deleteTrip: async (id: string) => saDeleteTrip(id),
+  deleteTrip: async (id: string): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>(`/api/trips/${id}`, {
+      method: 'DELETE',
+    });
+  },
 
-  updateTrip: async (id: string, data: { name: string }) => saUpdateTrip(id, data),
+  updateTrip: async (id: string, data: { name: string }): Promise<Trip> => {
+    return fetchApi<Trip>(`/api/trips/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 
-  addMember: async (tripId: string, member: { id: string; name: string; color: string }) =>
-    saAddMember(tripId, member),
+  addMember: async (tripId: string, member: Member): Promise<Member> => {
+    return fetchApi<Member>(`/api/trips/${tripId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(member),
+    });
+  },
 
-  updateMember: async (tripId: string, memberId: string, data: { name: string }) =>
-    saUpdateMember(tripId, memberId, data),
+  updateMember: async (
+    tripId: string,
+    memberId: string,
+    data: { name: string }
+  ): Promise<Member> => {
+    return fetchApi<Member>(`/api/trips/${tripId}/members/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 
-  removeMember: async (tripId: string, memberId: string, force?: boolean) => {
-    const data = await saRemoveMember(tripId, memberId, force);
-    try {
-      return validateRemoveMemberResponse(data);
-    } catch (err) {
-      handleApiError(err, 'Invalid remove member response');
-      return data;
-    }
+  removeMember: async (
+    tripId: string,
+    memberId: string,
+    force?: boolean
+  ): Promise<RemoveMemberResponse> => {
+    return fetchApi<RemoveMemberResponse>(
+      `/api/trips/${tripId}/members/${memberId}?force=${force}`,
+      {
+        method: 'DELETE',
+      }
+    );
   },
 
   addExpense: async (
@@ -82,7 +120,12 @@ export const api = {
       splitAmong: string[];
       date?: string;
     }
-  ) => saAddExpense(tripId, expense),
+  ): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>(`/api/trips/${tripId}/expenses`, {
+      method: 'POST',
+      body: JSON.stringify(expense),
+    });
+  },
 
   updateExpense: async (
     tripId: string,
@@ -95,31 +138,65 @@ export const api = {
       splitAmong: string[];
       date?: string;
     }
-  ) => saUpdateExpense(tripId, expense.id, expense),
-
-  removeExpense: async (tripId: string, expenseId: string) => saRemoveExpense(tripId, expenseId),
-
-  inviteMember: async (tripId: string, email: string) => {
-    const data = await saInviteMember(tripId, email);
-    try {
-      return validateInviteMemberResponse(data);
-    } catch (err) {
-      handleApiError(err, 'Invalid invite member response');
-      return data;
-    }
+  ): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>(`/api/trips/${tripId}/expenses/${expense.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(expense),
+    });
   },
 
-  removeCollaborator: async (tripId: string, memberId: string) =>
-    saRemoveCollaborator(tripId, memberId),
+  removeExpense: async (tripId: string, expenseId: string): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>(`/api/trips/${tripId}/expenses/${expenseId}`, {
+      method: 'DELETE',
+    });
+  },
 
-  joinTrip: async (token: string) => saJoinTrip(token),
+  inviteMember: async (tripId: string, email: string): Promise<InviteMemberResponse> => {
+    return fetchApi<InviteMemberResponse>(`/api/trips/${tripId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
 
-  getInvitations: async () => saGetInvitations(),
+  removeCollaborator: async (tripId: string, memberId: string): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>(`/api/trips/${tripId}/collaborators/${memberId}`, {
+      method: 'DELETE',
+    });
+  },
 
-  acceptInvitation: async (id: string) => saAcceptInvitation(id),
+  joinTrip: async (token: string): Promise<JoinTripResponse> => {
+    return fetchApi<JoinTripResponse>(`/api/trips/join/${token}`, {
+      method: 'POST',
+    });
+  },
 
-  updateUserProfile: async (data: { name?: string; email?: string }) => saUpdateUserProfile(data),
+  getInvitations: async (): Promise<TripInvitation[]> => {
+    return fetchApi<TripInvitation[]>('/api/invitations');
+  },
 
-  changePassword: async (currentPassword: string, newPassword: string) =>
-    saChangePassword(currentPassword, newPassword),
+  acceptInvitation: async (id: string): Promise<JoinTripResponse> => {
+    return fetchApi<JoinTripResponse>(`/api/invitations/${id}/accept`, {
+      method: 'POST',
+    });
+  },
+
+  updateUserProfile: async (data: {
+    name?: string;
+    email?: string;
+  }): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>('/api/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean }> => {
+    return fetchApi<{ success: boolean }>('/api/user/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
 };

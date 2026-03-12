@@ -7,7 +7,11 @@ describe('Authentication Integration Tests', () => {
 
   afterAll(async () => {
     try {
-      const prisma = (auth as any).database.client;
+      const prisma = (
+        auth as unknown as {
+          database: { client: { user: { deleteMany: (opts: unknown) => Promise<unknown> } } };
+        }
+      ).database.client;
       await prisma.user.deleteMany({
         where: { email: { startsWith: 'test-' } },
       });

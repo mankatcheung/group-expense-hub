@@ -2,17 +2,22 @@
   "name": "group-expense-hub",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
+    "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter api dev\"",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm --filter @group-expense-hub/db generate && pnpm --filter api build && pnpm --filter web build",
     "start": "pnpm --filter web start",
     "lint": "pnpm --filter web lint",
     "typecheck": "pnpm --filter web typecheck",
     "test": "pnpm --filter web test",
     "test:watch": "pnpm --filter web test:watch",
     "format": "pnpm --filter web format",
-    "format:check": "pnpm --filter web format:check"
+    "format:check": "pnpm --filter web format:check",
+    "db:generate": "pnpm --filter @group-expense-hub/db generate",
+    "db:push": "pnpm --filter @group-expense-hub/db db:push"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.3"
   },
