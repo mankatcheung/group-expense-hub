@@ -73,17 +73,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @group-expense-hub/db generate
 
-      - name: Build
-        run: pnpm --filter web build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-
       - name: Install Vercel CLI
         run: pnpm install --global vercel
 
       - name: Deploy to Vercel
-        run: vercel --prod --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel --prod --cwd=apps/web --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

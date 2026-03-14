@@ -12,8 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "generate:prisma": "prisma generate"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@better-auth/core": "^1.5.3",

@@ -36,9 +36,8 @@ build/
 *.sln
 *.sw?
 
-/src/generated/prisma
-
 .env
+.env*.local
 .vercel
 
 # typescript
