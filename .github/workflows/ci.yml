@@ -138,10 +138,22 @@ jobs:
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          BREVO_API_KEY: $${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: $${{ secrets.BREVO_SENDER_EMAIL }}
+          UPSTASH_REDIS_REST_TOKEN: $${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          UPSTASH_REDIS_REST_URL: $${{ secrets.UPSTASH_REDIS_REST_URL }}
 
-      - name: Deploy to Render
-        uses: render-dev/deploy@v1
-        with:
-          service-token: ${{ secrets.RENDER_SERVICE_TOKEN }}
-          service-id: ${{ secrets.RENDER_API_SERVICE_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Render CLI
+        run: |
+          curl -L https://github.com/render-oss/cli/releases/download/v1.1.0/cli_1.1.0_linux_amd64.zip -o render.zip
+          unzip render.zip
+          sudo mv cli_v1.1.0 /usr/local/bin/render
+
+      - name: Trigger Deploy with Render CLI
+        env:
+          # The Render CLI automatically detects this environment variable
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          CI: true
+        run: |
+          echo "Triggering deployment for service..."
+          render deploys create ${{ secrets.RENDER_SERVICE_ID }} --wait
