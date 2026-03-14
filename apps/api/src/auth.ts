@@ -1,11 +1,10 @@
+import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
-
-import { nextCookies } from 'better-auth/next-js';
-import { sendPasswordResetEmail } from './email';
-import { SESSION, TIME } from './constants';
+import { sendPasswordResetEmail } from './services/email.js';
+import { SESSION } from '@group-expense-hub/db/constants';
 
 const dbUrl = process.env.TURSO_DATABASE_URL || 'file:./dev.db';
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -14,14 +13,15 @@ const adapter = new PrismaLibSql({
   url: dbUrl,
   ...(authToken ? { authToken } : {}),
 });
+
 const prisma = new PrismaClient({ adapter });
 
-export const auth = betterAuth({
-  plugins: [nextCookies()],
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+// Using any for better-auth - types are complex to extract
+export const auth: any = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'sqlite',
   }),
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:4040',
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -38,10 +38,14 @@ export const auth = betterAuth({
     updateAge: SESSION.UPDATE_AGE,
     cookieCache: {
       enabled: true,
-      maxAge: TIME.SECONDS.ONE_MINUTE * 5,
+      maxAge: 5 * 60,
     },
   },
-  trustedOrigins: ['localhost:*', process.env.BETTER_AUTH_URL].filter((origin): origin is string =>
-    Boolean(origin)
-  ),
+  trustedOrigins: [
+    'localhost:*',
+    process.env.BETTER_AUTH_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ].filter(Boolean) as string[],
 });
+
+export { prisma };

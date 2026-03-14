@@ -7,10 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node modules and builds (monorepo)
 node_modules
 dist
 dist-ssr
 *.local
+
+# Apps and packages
+apps/*/node_modules
+apps/*/dist
+apps/*/.turbo
+packages/*/node_modules
+packages/*/dist
 
 # Next.js
 .next/
@@ -39,3 +47,4 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+.turbo/

@@ -1,22 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaClient } from '@group-expense-hub/db';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
 import path from 'path';
-import fs from 'fs';
-import { execSync } from 'child_process';
 
-const TEST_DB_PATH = path.join(process.cwd(), 'prisma', 'test.db');
+const DB_PATH = path.join(process.cwd(), '..', 'api', 'dev.db');
 
 export function createTestPrisma(): PrismaClient {
-  if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH);
-  }
-
-  execSync(`npx prisma db push --schema prisma/schema.prisma --url "file:./prisma/test.db"`, {
-    stdio: 'pipe',
-  });
-
-  const adapter = new PrismaBetterSqlite3({
-    url: TEST_DB_PATH,
+  const adapter = new PrismaLibSql({
+    url: `file:${DB_PATH}`,
   });
   return new PrismaClient({ adapter });
 }
