@@ -70,6 +70,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm --filter @group-expense-hub/db generate
+
       - name: Build
         run: pnpm --filter web build
         env:
@@ -120,6 +123,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @group-expense-hub/db generate
 
       - name: Build
         run: pnpm --filter api build
