@@ -153,4 +153,4 @@ jobs:
           CI: true
         run: |
           echo "Triggering deployment for service..."
-          render deploys create ${{ secrets.RENDER_SERVICE_ID }} --wait
+          render deploys create ${{ secrets.RENDER_SERVICE_ID }} --output json --confirm
