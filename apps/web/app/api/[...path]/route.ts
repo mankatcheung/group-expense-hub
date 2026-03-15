@@ -14,6 +14,32 @@ function getSessionCookie(cookieHeader: string | null): string {
   return sessionCookies.join('; ');
 }
 
+function rewriteCookie(setCookie: string): string {
+  const url = new URL(APP_URL);
+  const domain = url.hostname;
+
+  const parts = setCookie.split(';').map((p) => p.trim());
+  const [cookiePart] = parts;
+
+  const filtered = parts.filter((p) => !p.toLowerCase().startsWith('domain='));
+
+  if (!filtered.some((p) => p.toLowerCase().startsWith('domain='))) {
+    filtered.splice(1, 0, `Domain=${domain}`);
+  }
+
+  return filtered.join('; ');
+}
+
+function forwardCookies(response: Response, nextResponse: NextResponse): NextResponse {
+  const setCookie = response.headers.get('set-cookie');
+  if (setCookie) {
+    const rewritten = rewriteCookie(setCookie);
+    nextResponse.headers.set('set-cookie', rewritten);
+  }
+
+  return nextResponse;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -52,12 +78,7 @@ export async function GET(
       status: response.status,
     });
 
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      nextResponse.headers.set('set-cookie', setCookie);
-    }
-
-    return nextResponse;
+    return forwardCookies(response, nextResponse);
   } catch {
     return NextResponse.json({ error: 'Failed to connect to API' }, { status: 500 });
   }
@@ -104,12 +125,7 @@ export async function POST(
       status: response.status,
     });
 
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      nextResponse.headers.set('set-cookie', setCookie);
-    }
-
-    return nextResponse;
+    return forwardCookies(response, nextResponse);
   } catch {
     return NextResponse.json({ error: 'Failed to connect to API' }, { status: 500 });
   }
@@ -156,12 +172,7 @@ export async function PUT(
       status: response.status,
     });
 
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      nextResponse.headers.set('set-cookie', setCookie);
-    }
-
-    return nextResponse;
+    return forwardCookies(response, nextResponse);
   } catch {
     return NextResponse.json({ error: 'Failed to connect to API' }, { status: 500 });
   }
@@ -205,12 +216,7 @@ export async function DELETE(
       status: response.status,
     });
 
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      nextResponse.headers.set('set-cookie', setCookie);
-    }
-
-    return nextResponse;
+    return forwardCookies(response, nextResponse);
   } catch {
     return NextResponse.json({ error: 'Failed to connect to API' }, { status: 500 });
   }
