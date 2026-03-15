@@ -35,12 +35,15 @@ const getTrustedOrigins = (): string[] => {
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+const apiUrl =
+  process.env.NEXT_PUBLIC_API_URL || process.env.BETTER_AUTH_URL || 'http://localhost:4040';
+
 // Using any for better-auth - types are complex to extract
 export const auth: any = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'sqlite',
   }),
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:4040',
+  baseURL: apiUrl,
   advanced: {
     disableOriginCheck: isDev,
   },
@@ -61,6 +64,11 @@ export const auth: any = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60,
+    },
+    cookie: {
+      sameSite: isDev ? 'lax' : 'none',
+      path: '/',
+      secure: !isDev,
     },
   },
   trustedOrigins: getTrustedOrigins(),

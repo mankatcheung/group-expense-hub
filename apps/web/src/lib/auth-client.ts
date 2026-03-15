@@ -1,8 +1,7 @@
 import { createAuthClient } from 'better-auth/react';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4040',
-  fetchOptions: {
-    credentials: 'include',
-  },
+  baseURL: isDev ? 'http://localhost:4040' : '/api/auth',
 });
