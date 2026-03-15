@@ -2,6 +2,8 @@
 
 import type { Member, Trip, TripUser } from '@/lib/types';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4040';
+
 export interface InviteMemberResponse {
   success: boolean;
   pending?: boolean;
@@ -32,7 +34,7 @@ export interface TripInvitation {
 }
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     credentials: 'include',
     headers: {

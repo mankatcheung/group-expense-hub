@@ -38,7 +38,15 @@ const fastify = Fastify({
 });
 
 fastify.addHook('onRequest', async (request, _reply) => {
-  request.log.info({ url: request.url, method: request.method }, 'Incoming request');
+  request.log.info(
+    {
+      url: request.url,
+      method: request.method,
+      origin: request.headers.origin,
+      referer: request.headers.referer,
+    },
+    'Incoming request'
+  );
 });
 
 fastify.addHook('onResponse', async (request, reply) => {
@@ -71,7 +79,7 @@ await fastify.register(helmet, {
 });
 
 await fastify.register(cors, {
-  origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  origin: true,
   credentials: true,
 });
 
