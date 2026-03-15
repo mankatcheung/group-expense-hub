@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = process.env.API_URL || 'http://localhost:4040';
 
+function getSessionCookie(cookieHeader: string | null): string {
+  if (!cookieHeader) return '';
+
+  const cookies = cookieHeader.split(';').map((c) => c.trim());
+  const sessionCookies = cookies.filter(
+    (c) => c.startsWith('better-auth.session_token') || c.startsWith('better-auth.csrf-token')
+  );
+
+  return sessionCookies.join('; ');
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -14,19 +25,13 @@ export async function GET(
   const targetUrl = `${API_URL}/api/${pathStr}${searchParams}`;
 
   const headers: Record<string, string> = {};
-  const cookie = request.headers.get('cookie');
-  console.log('[PROXY GET] Cookie from browser:', cookie?.substring(0, 150));
+  const cookie = getSessionCookie(request.headers.get('cookie'));
+
   if (cookie) {
     headers.cookie = cookie;
   }
 
   try {
-    console.log(
-      '[PROXY GET] Forwarding to:',
-      targetUrl,
-      'with headers:',
-      headers.cookie?.substring(0, 150)
-    );
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers,
@@ -66,7 +71,8 @@ export async function POST(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const cookie = request.headers.get('cookie');
+  const cookie = getSessionCookie(request.headers.get('cookie'));
+
   if (cookie) {
     headers.cookie = cookie;
   }
@@ -114,7 +120,8 @@ export async function PUT(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const cookie = request.headers.get('cookie');
+  const cookie = getSessionCookie(request.headers.get('cookie'));
+
   if (cookie) {
     headers.cookie = cookie;
   }
@@ -162,7 +169,8 @@ export async function DELETE(
   const targetUrl = `${API_URL}/api/${pathStr}${searchParams}`;
 
   const headers: Record<string, string> = {};
-  const cookie = request.headers.get('cookie');
+  const cookie = getSessionCookie(request.headers.get('cookie'));
+
   if (cookie) {
     headers.cookie = cookie;
   }

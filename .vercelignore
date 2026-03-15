@@ -1,0 +1,26 @@
+# Monorepo - exclude non-web projects
+apps/api/
+packages/
+
+# Build artifacts
+.turbo/
+dist/
+node_modules/
+
+# Config files
+turbo.json
+pnpm-lock.yaml
+
+# Git
+.github/
+.git/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.sw?
