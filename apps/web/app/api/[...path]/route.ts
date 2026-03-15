@@ -8,7 +8,11 @@ function getSessionCookie(cookieHeader: string | null): string {
 
   const cookies = cookieHeader.split(';').map((c) => c.trim());
   const sessionCookies = cookies.filter(
-    (c) => c.startsWith('better-auth.session_token') || c.startsWith('better-auth.csrf-token')
+    (c) =>
+      c.startsWith('better-auth.session_token') ||
+      c.startsWith('better-auth.csrf-token') ||
+      c.startsWith('__Secure-better-auth.session_token') ||
+      c.startsWith('__Host-better-auth.csrf-token')
   );
 
   return sessionCookies.join('; ');
@@ -21,10 +25,16 @@ function rewriteCookie(setCookie: string): string {
   const parts = setCookie.split(';').map((p) => p.trim());
   const [cookiePart] = parts;
 
-  const filtered = parts.filter((p) => !p.toLowerCase().startsWith('domain='));
+  const filtered = parts.filter(
+    (p) => !p.toLowerCase().startsWith('domain=') && !p.toLowerCase().startsWith('path=')
+  );
 
   if (!filtered.some((p) => p.toLowerCase().startsWith('domain='))) {
     filtered.splice(1, 0, `Domain=${domain}`);
+  }
+
+  if (!filtered.some((p) => p.toLowerCase().startsWith('path='))) {
+    filtered.splice(2, 0, 'Path=/');
   }
 
   return filtered.join('; ');
