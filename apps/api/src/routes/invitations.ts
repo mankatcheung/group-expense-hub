@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
+import { rateLimit } from '../plugins/ratelimit.js';
 
 const COLORS = [
   '#EF4444',
@@ -60,6 +61,11 @@ export default async function invitationsRouter(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     const user = await getUserFromRequest(request);
     const userId = user.id;
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const invitation = await prisma.tripInvitation.findUnique({
       where: { id },

@@ -2,12 +2,18 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
 import { canEditTrip } from './trips.js';
+import { rateLimit } from '../plugins/ratelimit.js';
 
 export default async function membersRouter(fastify: FastifyInstance) {
   fastify.post('/:id/members', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId } = request.params as { id: string };
     const user = await getUserFromRequest(request);
     const body = request.body as { id: string; name: string; color: string };
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -23,6 +29,11 @@ export default async function membersRouter(fastify: FastifyInstance) {
     const { id: tripId, memberId } = request.params as { id: string; memberId: string };
     const user = await getUserFromRequest(request);
     const body = request.body as { name: string };
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -40,6 +51,11 @@ export default async function membersRouter(fastify: FastifyInstance) {
   fastify.delete('/:id/members/:memberId', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId, memberId } = request.params as { id: string; memberId: string };
     const user = await getUserFromRequest(request);
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {

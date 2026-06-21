@@ -1,6 +1,6 @@
 'use client';
 
-import type { Member, Trip, TripUser } from '@/lib/types';
+import type { Member, Trip, TripSummary, TripUser } from '@/lib/types';
 
 export interface InviteMemberResponse {
   success: boolean;
@@ -50,8 +50,8 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const api = {
-  getTrips: async (): Promise<Trip[]> => {
-    return fetchApi<Trip[]>('/api/trips');
+  getTrips: async (): Promise<TripSummary[]> => {
+    return fetchApi<TripSummary[]>('/api/trips');
   },
 
   getTrip: async (id: string): Promise<Trip> => {

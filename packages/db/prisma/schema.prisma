@@ -117,6 +117,7 @@ model TripInvitation {
   @@unique([tripId, email])
   @@index([tripId])
   @@index([userId])
+  @@index([email])
 }
 
 model Member {
@@ -152,6 +153,7 @@ model Expense {
 
   @@index([tripId])
   @@index([paidById])
+  @@index([tripId, date])
 }
 
 model ExpenseSplit {

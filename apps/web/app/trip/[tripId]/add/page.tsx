@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useTrip } from '@/context/TripContext';
+import { useTripDetail } from '@/hooks/use-trip-detail';
 import AddExpense from '@/components/AddExpense';
 import Header from '@/components/Header';
 import { FormSkeleton } from '@/components/Skeletons';
@@ -14,9 +14,7 @@ export default function AddExpensePage() {
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
-  const { getTrip, addExpense, isLoading, error, refreshTrips } = useTrip();
-
-  const trip = getTrip(tripId);
+  const { trip, addExpense, isLoading, error, refreshTrip } = useTripDetail(tripId);
 
   if (isLoading) {
     return (
@@ -46,7 +44,7 @@ export default function AddExpensePage() {
             <p className="text-destructive text-sm font-medium mb-1">Failed to load trip data</p>
             <p className="text-muted-foreground text-xs mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" size="sm" onClick={refreshTrips}>
+              <Button variant="outline" size="sm" onClick={refreshTrip}>
                 Try Again
               </Button>
               <Button variant="outline" size="sm" onClick={() => router.push('/')}>
@@ -88,7 +86,7 @@ export default function AddExpensePage() {
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <AddExpense members={trip.members} onAdd={(e) => addExpense(trip.id, e)} />
+            <AddExpense members={trip.members} onAdd={(e) => addExpense(e)} />
           </div>
         </div>
       </div>
