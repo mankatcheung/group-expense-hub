@@ -4,6 +4,7 @@ import { Trip, TripSummary } from '@/lib/types';
 import { api } from '@/services/api';
 import { CACHE } from '@/lib/constants';
 import { TRIPS_KEY, tripDetailKey } from '@/lib/trip-query-keys';
+import { handleApiError } from '@/lib/error-handler';
 
 interface TripContextType {
   trips: TripSummary[];
@@ -82,9 +83,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
       createTripMutation.mutate(
         { id, name },
         {
-          onError: () => {
+          onError: (err) => {
             setTrips((prev) => prev.filter((t) => t.id !== id));
             queryClient.removeQueries({ queryKey: tripDetailKey(id) });
+            handleApiError(err, 'Failed to create trip');
           },
         }
       );
@@ -102,8 +104,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
       queryClient.removeQueries({ queryKey: tripDetailKey(id) });
 
       deleteTripMutation.mutate(id, {
-        onError: () => {
+        onError: (err) => {
           setTrips(previousTrips);
+          handleApiError(err, 'Failed to delete trip');
         },
       });
     },

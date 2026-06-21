@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { TripProvider, useTrip } from '@/context/TripContext';
 import { useTripDetail } from '@/hooks/use-trip-detail';
 import { api } from '@/services/api';
+import { handleApiError } from '@/lib/error-handler';
 import type { Trip, TripSummary } from '@/lib/types';
 
 vi.mock('@/services/api', () => ({
@@ -23,6 +24,10 @@ vi.mock('@/services/api', () => ({
     inviteMember: vi.fn(),
     removeCollaborator: vi.fn(),
   },
+}));
+
+vi.mock('@/lib/error-handler', () => ({
+  handleApiError: vi.fn(),
 }));
 
 function makeSummary(overrides: Partial<TripSummary> = {}): TripSummary {
@@ -117,6 +122,11 @@ describe('TripContext', () => {
     await waitFor(() => {
       expect(result.current.trips).toEqual([summary]);
     });
+
+    expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(
+      expect.any(Error),
+      'Failed to delete trip'
+    );
   });
 
   it('creates a trip using the same id for the optimistic summary and the mutation payload', async () => {
@@ -221,6 +231,31 @@ describe('useTripDetail', () => {
     await waitFor(() => {
       expect(result.current.trip?.members).toEqual([]);
     });
+
+    expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(
+      expect.any(Error),
+      'Failed to add member'
+    );
+  });
+
+  it('shows an error and rethrows when removeMember fails outright', async () => {
+    const trip = makeTrip({ members: [{ id: 'm-1', name: 'Alice', color: '#EF4444' }] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeMember).mockRejectedValue(new Error('network error'));
+
+    await act(async () => {
+      await expect(result.current.removeMember('m-1')).rejects.toThrow('network error');
+    });
+
+    expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(
+      expect.any(Error),
+      'Failed to remove member'
+    );
+    // No optimistic update happens before the await, so the member should
+    // still be present in the cache after the failed request.
+    expect(result.current.trip?.members).toHaveLength(1);
   });
 
   it('removes a member from the cache only when the server confirms success', async () => {

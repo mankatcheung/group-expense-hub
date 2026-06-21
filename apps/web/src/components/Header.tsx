@@ -12,6 +12,7 @@ import {
 import { LogOut, Plane, Settings, Sun, Moon, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { handleApiError } from '@/lib/error-handler';
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -24,8 +25,12 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
-    await logout();
-    router.push('/login');
+    try {
+      await logout();
+      router.push('/login');
+    } catch (err) {
+      handleApiError(err, 'Failed to log out');
+    }
   };
 
   return (

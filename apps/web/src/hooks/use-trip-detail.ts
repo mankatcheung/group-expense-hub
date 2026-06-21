@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Member, Expense, Trip } from '@/lib/types';
 import { api, InviteMemberResponse, RemoveMemberResponse } from '@/services/api';
 import { tripDetailKey, patchTripSummary } from '@/lib/trip-query-keys';
+import { handleApiError } from '@/lib/error-handler';
 
 /**
  * Per-trip detail data + mutations, backed by its own query cache entry
@@ -86,7 +87,12 @@ export function useTripDetail(tripId: string) {
       setTrip((prev) => (prev ? { ...prev, name: trimmed } : prev));
       patchTripSummary(queryClient, tripId, (s) => ({ ...s, name: trimmed }));
 
-      updateTripMutation.mutate(trimmed, { onError: resync });
+      updateTripMutation.mutate(trimmed, {
+        onError: (err) => {
+          resync();
+          handleApiError(err, 'Failed to rename trip');
+        },
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateTripMutation, queryClient, tripId, resync]
@@ -98,7 +104,7 @@ export function useTripDetail(tripId: string) {
       patchTripSummary(queryClient, tripId, (s) => ({ ...s, memberCount: s.memberCount + 1 }));
 
       addMemberMutation.mutate(member, {
-        onError: () => {
+        onError: (err) => {
           setTrip((prev) =>
             prev ? { ...prev, members: prev.members.filter((m) => m.id !== member.id) } : prev
           );
@@ -106,6 +112,7 @@ export function useTripDetail(tripId: string) {
             ...s,
             memberCount: Math.max(0, s.memberCount - 1),
           }));
+          handleApiError(err, 'Failed to add member');
         },
       });
     },
@@ -121,7 +128,15 @@ export function useTripDetail(tripId: string) {
           : prev
       );
 
-      updateMemberMutation.mutate({ memberId, name }, { onError: resync });
+      updateMemberMutation.mutate(
+        { memberId, name },
+        {
+          onError: (err) => {
+            resync();
+            handleApiError(err, 'Failed to update member');
+          },
+        }
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateMemberMutation, resync]
@@ -129,17 +144,22 @@ export function useTripDetail(tripId: string) {
 
   const removeMember = useCallback(
     async (memberId: string, force = false): Promise<RemoveMemberResponse> => {
-      const response = await removeMemberMutation.mutateAsync({ memberId, force });
-      if (response.success) {
-        setTrip((prev) =>
-          prev ? { ...prev, members: prev.members.filter((m) => m.id !== memberId) } : prev
-        );
-        patchTripSummary(queryClient, tripId, (s) => ({
-          ...s,
-          memberCount: Math.max(0, s.memberCount - 1),
-        }));
+      try {
+        const response = await removeMemberMutation.mutateAsync({ memberId, force });
+        if (response.success) {
+          setTrip((prev) =>
+            prev ? { ...prev, members: prev.members.filter((m) => m.id !== memberId) } : prev
+          );
+          patchTripSummary(queryClient, tripId, (s) => ({
+            ...s,
+            memberCount: Math.max(0, s.memberCount - 1),
+          }));
+        }
+        return response;
+      } catch (err) {
+        handleApiError(err, 'Failed to remove member');
+        throw err;
       }
-      return response;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [removeMemberMutation, queryClient, tripId]
@@ -158,7 +178,7 @@ export function useTripDetail(tripId: string) {
       }));
 
       addExpenseMutation.mutate(expense, {
-        onError: () => {
+        onError: (err) => {
           setTrip((prev) =>
             prev ? { ...prev, expenses: prev.expenses.filter((e) => e.id !== expense.id) } : prev
           );
@@ -170,6 +190,7 @@ export function useTripDetail(tripId: string) {
               [expense.currency]: (s.totalsByCurrency[expense.currency] || 0) - expense.amount,
             },
           }));
+          handleApiError(err, 'Failed to add expense');
         },
       });
     },
@@ -198,7 +219,12 @@ export function useTripDetail(tripId: string) {
         }));
       }
 
-      updateExpenseMutation.mutate(expense, { onError: resync });
+      updateExpenseMutation.mutate(expense, {
+        onError: (err) => {
+          resync();
+          handleApiError(err, 'Failed to update expense');
+        },
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateExpenseMutation, queryClient, tripId, trip, resync]
@@ -223,7 +249,12 @@ export function useTripDetail(tripId: string) {
         }));
       }
 
-      removeExpenseMutation.mutate(expenseId, { onError: resync });
+      removeExpenseMutation.mutate(expenseId, {
+        onError: (err) => {
+          resync();
+          handleApiError(err, 'Failed to remove expense');
+        },
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [removeExpenseMutation, queryClient, tripId, trip, resync]
@@ -242,7 +273,12 @@ export function useTripDetail(tripId: string) {
         prev ? { ...prev, tripMembers: prev.tripMembers.filter((m) => m.id !== memberId) } : prev
       );
 
-      removeCollaboratorMutation.mutate(memberId, { onError: resync });
+      removeCollaboratorMutation.mutate(memberId, {
+        onError: (err) => {
+          resync();
+          handleApiError(err, 'Failed to remove collaborator');
+        },
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [removeCollaboratorMutation, resync]
