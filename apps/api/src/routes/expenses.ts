@@ -55,6 +55,11 @@ export default async function expensesRouter(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
     }
 
+    const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense || expense.tripId !== tripId) {
+      return reply.status(404).send({ error: 'Expense not found' });
+    }
+
     await prisma.expense.update({
       where: { id: expenseId },
       data: {
@@ -80,6 +85,11 @@ export default async function expensesRouter(fastify: FastifyInstance) {
       const canEdit = await canEditTrip(tripId, user.id);
       if (!canEdit) {
         return reply.status(403).send({ error: 'Not authorized to edit this trip' });
+      }
+
+      const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+      if (!expense || expense.tripId !== tripId) {
+        return reply.status(404).send({ error: 'Expense not found' });
       }
 
       await prisma.expense.delete({ where: { id: expenseId } });

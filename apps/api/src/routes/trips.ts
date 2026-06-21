@@ -325,6 +325,11 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     const { token } = request.params as { token: string };
     const user = await getUserFromRequest(request);
 
+    const rateLimitResult = await rateLimit.auth.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const invitation = await prisma.tripInvitation.findUnique({
       where: { token },
       select: { id: true, tripId: true, status: true, expiresAt: true, role: true },

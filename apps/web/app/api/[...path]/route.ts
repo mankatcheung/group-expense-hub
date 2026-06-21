@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateOrigin } from '@/lib/validate-origin';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4040';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -54,6 +55,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   const { path } = await params;
   const pathStr = path.join('/');
   const url = new URL(request.url);
@@ -98,6 +102,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   const { path } = await params;
   const pathStr = path.join('/');
 
@@ -145,6 +152,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   const { path } = await params;
   const pathStr = path.join('/');
 
@@ -192,6 +202,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   const { path } = await params;
   const pathStr = path.join('/');
   const url = new URL(request.url);
