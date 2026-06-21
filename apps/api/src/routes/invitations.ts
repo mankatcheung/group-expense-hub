@@ -1,22 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
-
-const COLORS = [
-  '#EF4444',
-  '#F97316',
-  '#EAB308',
-  '#22C55E',
-  '#14B8A6',
-  '#3B82F6',
-  '#8B5CF6',
-  '#EC4899',
-];
-
-function getRandomColor() {
-  const index = Math.floor(Math.random() * COLORS.length);
-  return COLORS[index] ?? '#16553b';
-}
+import { getRandomColor } from '../lib/colors.js';
 
 export default async function invitationsRouter(fastify: FastifyInstance) {
   // GET /api/invitations - Get pending invitations

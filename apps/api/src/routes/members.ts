@@ -2,12 +2,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
 import { canEditTrip } from './trips.js';
+import { CreateMemberRequestSchema, UpdateMemberRequestSchema } from '@group-expense-hub/db/schemas';
+import { parseBody } from '../lib/validate-request.js';
 
 export default async function membersRouter(fastify: FastifyInstance) {
   fastify.post('/:id/members', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId } = request.params as { id: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as { id: string; name: string; color: string };
+    const body = parseBody(CreateMemberRequestSchema, request.body, reply);
+    if (!body) return;
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -22,7 +25,8 @@ export default async function membersRouter(fastify: FastifyInstance) {
   fastify.put('/:id/members/:memberId', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId, memberId } = request.params as { id: string; memberId: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as { name: string };
+    const body = parseBody(UpdateMemberRequestSchema, request.body, reply);
+    if (!body) return;
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {

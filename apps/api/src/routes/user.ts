@@ -2,12 +2,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
 import { rateLimit } from '../plugins/ratelimit.js';
+import { UpdateProfileRequestSchema } from '@group-expense-hub/db/schemas';
+import { parseBody } from '../lib/validate-request.js';
 
 export default async function userRouter(fastify: FastifyInstance) {
   // PUT /api/user/profile - Update profile
   fastify.put('/profile', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
-    const body = request.body as { name?: string; email?: string };
+    const body = parseBody(UpdateProfileRequestSchema, request.body, reply);
+    if (!body) return;
 
     const rateLimitResult = await rateLimit.auth.limit(user.id);
     if (!rateLimitResult.success) {

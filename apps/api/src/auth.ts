@@ -38,8 +38,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const apiUrl =
   process.env.NEXT_PUBLIC_API_URL || process.env.BETTER_AUTH_URL || 'http://localhost:4040';
 
-// Using any for better-auth - types are complex to extract
-export const auth: any = betterAuth({
+export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'sqlite',
   }),

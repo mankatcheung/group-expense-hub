@@ -1,33 +1,28 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../auth.js';
 import { rateLimit } from '../plugins/ratelimit.js';
 import { INVITATION } from '@group-expense-hub/db/constants';
+import {
+  CreateTripRequestSchema,
+  UpdateTripRequestSchema,
+  InviteMemberRequestSchema,
+} from '@group-expense-hub/db/schemas';
 import { getUserFromRequest } from '../lib/get-session.js';
+import { getRandomColor } from '../lib/colors.js';
+import { parseBody } from '../lib/validate-request.js';
 import {
   sendTripInvitationEmail,
   sendTripAddedNotification,
   getAppUrl,
 } from '../services/email.js';
 
-const COLORS = [
-  '#EF4444',
-  '#F97316',
-  '#EAB308',
-  '#22C55E',
-  '#14B8A6',
-  '#3B82F6',
-  '#8B5CF6',
-  '#EC4899',
-];
-
-function getRandomColor() {
-  const index = Math.floor(Math.random() * COLORS.length);
-  return COLORS[index] ?? '#16553b';
-}
-
 type TripAccessLevel = 'owner' | 'collaborator' | null;
 
-async function getTripAccessLevel(tripId: string, userId: string): Promise<TripAccessLevel> {
+export async function getTripAccessLevel(
+  tripId: string,
+  userId: string
+): Promise<TripAccessLevel> {
   const trip = await prisma.trip.findUnique({
     where: { id: tripId },
     select: { userId: true },
@@ -48,7 +43,16 @@ export async function canEditTrip(tripId: string, userId: string) {
   return access === 'owner' || access === 'collaborator';
 }
 
-function formatTrip(trip: any, userId: string) {
+const tripInclude = {
+  members: true,
+  expenses: { include: { splits: true } },
+  tripMembers: { include: { user: true } },
+  user: { select: { id: true, name: true, email: true, image: true } },
+} satisfies Prisma.TripInclude;
+
+type TripWithRelations = Prisma.TripGetPayload<{ include: typeof tripInclude }>;
+
+function formatTrip(trip: TripWithRelations, userId: string) {
   return {
     id: trip.id,
     name: trip.name,
@@ -57,21 +61,21 @@ function formatTrip(trip: any, userId: string) {
     owner: trip.user
       ? { id: trip.user.id, name: trip.user.name, email: trip.user.email, image: trip.user.image }
       : null,
-    members: trip.members.map((m: any) => ({ id: m.id, name: m.name, color: m.color })),
-    tripMembers: trip.tripMembers.map((tm: any) => ({
+    members: trip.members.map(m => ({ id: m.id, name: m.name, color: m.color })),
+    tripMembers: trip.tripMembers.map(tm => ({
       id: tm.id,
       userId: tm.userId,
       role: tm.role,
       user: { id: tm.user.id, name: tm.user.name, email: tm.user.email, image: tm.user.image },
     })),
-    expenses: trip.expenses.map((e: any) => ({
+    expenses: trip.expenses.map(e => ({
       id: e.id,
       description: e.description,
       amount: e.amount,
       currency: e.currency,
       date: e.date.toISOString(),
       paidBy: e.paidById,
-      splitAmong: e.splits.map((s: any) => s.memberId),
+      splitAmong: e.splits.map(s => s.memberId),
     })),
   };
 }
@@ -82,12 +86,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
 
     const ownedTrips = await prisma.trip.findMany({
       where: { userId: user.id },
-      include: {
-        members: true,
-        expenses: { include: { splits: true } },
-        tripMembers: { include: { user: true } },
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
+      include: tripInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -98,21 +97,17 @@ export default async function tripsRouter(fastify: FastifyInstance) {
 
     const collaboratorTrips = await prisma.trip.findMany({
       where: { id: { in: collaboratorTripIds.map(t => t.tripId) } },
-      include: {
-        members: true,
-        expenses: { include: { splits: true } },
-        tripMembers: { include: { user: true } },
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
+      include: tripInclude,
       orderBy: { createdAt: 'desc' },
     });
 
     return [...ownedTrips, ...collaboratorTrips].map(trip => formatTrip(trip, user.id));
   });
 
-  fastify.post('/', async (request: FastifyRequest, _reply: FastifyReply) => {
+  fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
-    const body = request.body as { id: string; name: string; createdAt?: string };
+    const body = parseBody(CreateTripRequestSchema, request.body, reply);
+    if (!body) return;
 
     const trip = await prisma.trip.create({
       data: {
@@ -146,12 +141,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
 
     const trip = await prisma.trip.findUnique({
       where: { id },
-      include: {
-        members: true,
-        expenses: { include: { splits: true } },
-        tripMembers: { include: { user: true } },
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
+      include: tripInclude,
     });
 
     if (!trip) {
@@ -164,7 +154,8 @@ export default async function tripsRouter(fastify: FastifyInstance) {
   fastify.put('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as { name: string };
+    const body = parseBody(UpdateTripRequestSchema, request.body, reply);
+    if (!body) return;
 
     const canEdit = await canEditTrip(id, user.id);
     if (!canEdit) {
@@ -185,7 +176,8 @@ export default async function tripsRouter(fastify: FastifyInstance) {
   fastify.post('/:id/invite', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId } = request.params as { id: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as { email: string };
+    const body = parseBody(InviteMemberRequestSchema, request.body, reply);
+    if (!body) return;
 
     const rateLimitResult = await rateLimit.email.limit(user.id);
     if (!rateLimitResult.success) {

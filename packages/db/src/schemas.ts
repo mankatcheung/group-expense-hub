@@ -121,3 +121,44 @@ export function safeParseRemoveMemberResponse(data: unknown) {
 export function safeParseBalanceCalculationResponse(data: unknown) {
   return BalanceCalculationResponseSchema.safeParse(data);
 }
+
+// Request body schemas — distinct from the response schemas above since
+// request payloads have different optionality (e.g. `date` defaults
+// server-side) and omit server-computed fields.
+
+export const CreateTripRequestSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  createdAt: z.string().datetime().optional(),
+});
+
+export const UpdateTripRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+});
+
+export const CreateMemberRequestSchema = MemberSchema;
+
+export const UpdateMemberRequestSchema = z.object({
+  name: z.string().min(1).max(100),
+});
+
+export const CreateExpenseRequestSchema = z.object({
+  id: z.string().uuid(),
+  description: z.string().min(1).max(500),
+  amount: z.number().positive(),
+  currency: z.string().length(3),
+  paidBy: z.string().uuid(),
+  splitAmong: z.array(z.string().uuid()).min(1),
+  date: z.string().datetime().optional(),
+});
+
+export const UpdateExpenseRequestSchema = CreateExpenseRequestSchema;
+
+export const InviteMemberRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+export const UpdateProfileRequestSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional(),
+});

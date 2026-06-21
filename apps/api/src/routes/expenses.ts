@@ -2,20 +2,18 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../auth.js';
 import { getUserFromRequest } from '../lib/get-session.js';
 import { canEditTrip } from './trips.js';
+import {
+  CreateExpenseRequestSchema,
+  UpdateExpenseRequestSchema,
+} from '@group-expense-hub/db/schemas';
+import { parseBody } from '../lib/validate-request.js';
 
 export default async function expensesRouter(fastify: FastifyInstance) {
   fastify.post('/:id/expenses', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId } = request.params as { id: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as {
-      id: string;
-      description: string;
-      amount: number;
-      currency: string;
-      paidBy: string;
-      splitAmong: string[];
-      date?: string;
-    };
+    const body = parseBody(CreateExpenseRequestSchema, request.body, reply);
+    if (!body) return;
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -41,14 +39,8 @@ export default async function expensesRouter(fastify: FastifyInstance) {
   fastify.put('/:id/expenses/:expenseId', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id: tripId, expenseId } = request.params as { id: string; expenseId: string };
     const user = await getUserFromRequest(request);
-    const body = request.body as {
-      description: string;
-      amount: number;
-      currency: string;
-      paidBy: string;
-      splitAmong: string[];
-      date?: string;
-    };
+    const body = parseBody(UpdateExpenseRequestSchema, request.body, reply);
+    if (!body) return;
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
