@@ -26,7 +26,11 @@ const disableOriginCheck = process.env.DISABLE_ORIGIN_CHECK === 'true';
 const apiUrl =
   process.env.NEXT_PUBLIC_API_URL || process.env.BETTER_AUTH_URL || 'http://localhost:4040';
 
-export const auth = betterAuth({
+// better-auth's inferred return type references internal @better-auth/core
+// paths that aren't portable under pnpm's nested node_modules, which breaks
+// `tsc` emit (TS2742) even though `tsc --noEmit` doesn't catch it. An
+// explicit type annotation is the documented workaround.
+export const auth: any = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'sqlite',
   }),
