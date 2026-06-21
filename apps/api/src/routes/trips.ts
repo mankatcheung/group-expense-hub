@@ -25,17 +25,16 @@ export async function getTripAccessLevel(
 ): Promise<TripAccessLevel> {
   const trip = await prisma.trip.findUnique({
     where: { id: tripId },
-    select: { userId: true },
+    select: {
+      userId: true,
+      tripMembers: { where: { userId }, select: { id: true } },
+    },
   });
 
   if (!trip) return null;
   if (trip.userId === userId) return 'owner';
 
-  const member = await prisma.tripMember.findUnique({
-    where: { tripId_userId: { tripId, userId } },
-  });
-
-  return member ? 'collaborator' : null;
+  return trip.tripMembers.length > 0 ? 'collaborator' : null;
 }
 
 export async function canEditTrip(tripId: string, userId: string) {
@@ -51,6 +50,38 @@ const tripInclude = {
 } satisfies Prisma.TripInclude;
 
 type TripWithRelations = Prisma.TripGetPayload<{ include: typeof tripInclude }>;
+
+const tripSummarySelect = {
+  id: true,
+  name: true,
+  createdAt: true,
+  userId: true,
+  user: { select: { id: true, name: true, email: true, image: true } },
+  members: { select: { id: true } },
+  expenses: { select: { amount: true, currency: true } },
+} satisfies Prisma.TripSelect;
+
+type TripSummaryPayload = Prisma.TripGetPayload<{ select: typeof tripSummarySelect }>;
+
+function formatTripSummary(trip: TripSummaryPayload, userId: string) {
+  const totalsByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
+    acc[e.currency] = (acc[e.currency] || 0) + e.amount;
+    return acc;
+  }, {});
+
+  return {
+    id: trip.id,
+    name: trip.name,
+    createdAt: trip.createdAt.toISOString(),
+    isOwner: trip.userId === userId,
+    owner: trip.user
+      ? { id: trip.user.id, name: trip.user.name, email: trip.user.email, image: trip.user.image }
+      : null,
+    memberCount: trip.members.length,
+    expenseCount: trip.expenses.length,
+    totalsByCurrency,
+  };
+}
 
 function formatTrip(trip: TripWithRelations, userId: string) {
   return {
@@ -86,7 +117,7 @@ export default async function tripsRouter(fastify: FastifyInstance) {
 
     const ownedTrips = await prisma.trip.findMany({
       where: { userId: user.id },
-      include: tripInclude,
+      select: tripSummarySelect,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -97,17 +128,22 @@ export default async function tripsRouter(fastify: FastifyInstance) {
 
     const collaboratorTrips = await prisma.trip.findMany({
       where: { id: { in: collaboratorTripIds.map(t => t.tripId) } },
-      include: tripInclude,
+      select: tripSummarySelect,
       orderBy: { createdAt: 'desc' },
     });
 
-    return [...ownedTrips, ...collaboratorTrips].map(trip => formatTrip(trip, user.id));
+    return [...ownedTrips, ...collaboratorTrips].map(trip => formatTripSummary(trip, user.id));
   });
 
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = await getUserFromRequest(request);
     const body = parseBody(CreateTripRequestSchema, request.body, reply);
     if (!body) return;
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const trip = await prisma.trip.create({
       data: {
@@ -157,6 +193,11 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     const body = parseBody(UpdateTripRequestSchema, request.body, reply);
     if (!body) return;
 
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const canEdit = await canEditTrip(id, user.id);
     if (!canEdit) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
@@ -165,9 +206,14 @@ export default async function tripsRouter(fastify: FastifyInstance) {
     return prisma.trip.update({ where: { id }, data: { name: body.name } });
   });
 
-  fastify.delete('/:id', async (request: FastifyRequest, _reply: FastifyReply) => {
+  fastify.delete('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
     const user = await getUserFromRequest(request);
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     await prisma.trip.delete({ where: { id, userId: user.id } });
     return { success: true };
@@ -288,6 +334,11 @@ export default async function tripsRouter(fastify: FastifyInstance) {
       const { id: tripId, memberId } = request.params as { id: string; memberId: string };
       const user = await getUserFromRequest(request);
 
+      const rateLimitResult = await rateLimit.api.limit(user.id);
+      if (!rateLimitResult.success) {
+        return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+      }
+
       const access = await getTripAccessLevel(tripId, user.id);
       if (access !== 'owner') {
         return reply.status(403).send({ error: 'Only the owner can remove members' });
@@ -316,6 +367,11 @@ export default async function tripsRouter(fastify: FastifyInstance) {
   fastify.post('/join/:token', async (request: FastifyRequest, reply: FastifyReply) => {
     const { token } = request.params as { token: string };
     const user = await getUserFromRequest(request);
+
+    const rateLimitResult = await rateLimit.auth.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const invitation = await prisma.tripInvitation.findUnique({
       where: { token },

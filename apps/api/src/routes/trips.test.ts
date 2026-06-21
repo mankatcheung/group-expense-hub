@@ -5,7 +5,6 @@ import { prisma } from '../auth.js';
 vi.mock('../auth.js', () => ({
   prisma: {
     trip: { findUnique: vi.fn() },
-    tripMember: { findUnique: vi.fn() },
   },
 }));
 
@@ -23,17 +22,21 @@ describe('getTripAccessLevel', () => {
   });
 
   it('returns owner when the user owns the trip', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'user-1',
+      tripMembers: [],
+    } as never);
 
     const access = await getTripAccessLevel('trip-1', 'user-1');
 
     expect(access).toBe('owner');
-    expect(prisma.tripMember.findUnique).not.toHaveBeenCalled();
   });
 
   it('returns collaborator when the user is a trip member but not the owner', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'owner-1' } as never);
-    vi.mocked(prisma.tripMember.findUnique).mockResolvedValue({ id: 'tm-1' } as never);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'owner-1',
+      tripMembers: [{ id: 'tm-1' }],
+    } as never);
 
     const access = await getTripAccessLevel('trip-1', 'user-2');
 
@@ -41,8 +44,10 @@ describe('getTripAccessLevel', () => {
   });
 
   it('returns null when the user is neither the owner nor a member', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'owner-1' } as never);
-    vi.mocked(prisma.tripMember.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'owner-1',
+      tripMembers: [],
+    } as never);
 
     const access = await getTripAccessLevel('trip-1', 'stranger');
 
@@ -56,21 +61,28 @@ describe('canEditTrip', () => {
   });
 
   it('returns true for the owner', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'user-1',
+      tripMembers: [],
+    } as never);
 
     await expect(canEditTrip('trip-1', 'user-1')).resolves.toBe(true);
   });
 
   it('returns true for a collaborator', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'owner-1' } as never);
-    vi.mocked(prisma.tripMember.findUnique).mockResolvedValue({ id: 'tm-1' } as never);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'owner-1',
+      tripMembers: [{ id: 'tm-1' }],
+    } as never);
 
     await expect(canEditTrip('trip-1', 'user-2')).resolves.toBe(true);
   });
 
   it('returns false for an unrelated user', async () => {
-    vi.mocked(prisma.trip.findUnique).mockResolvedValue({ userId: 'owner-1' } as never);
-    vi.mocked(prisma.tripMember.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.trip.findUnique).mockResolvedValue({
+      userId: 'owner-1',
+      tripMembers: [],
+    } as never);
 
     await expect(canEditTrip('trip-1', 'stranger')).resolves.toBe(false);
   });

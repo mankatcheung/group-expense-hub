@@ -7,6 +7,7 @@ import {
   UpdateExpenseRequestSchema,
 } from '@group-expense-hub/db/schemas';
 import { parseBody } from '../lib/validate-request.js';
+import { rateLimit } from '../plugins/ratelimit.js';
 
 export default async function expensesRouter(fastify: FastifyInstance) {
   fastify.post('/:id/expenses', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -14,6 +15,11 @@ export default async function expensesRouter(fastify: FastifyInstance) {
     const user = await getUserFromRequest(request);
     const body = parseBody(CreateExpenseRequestSchema, request.body, reply);
     if (!body) return;
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -42,9 +48,19 @@ export default async function expensesRouter(fastify: FastifyInstance) {
     const body = parseBody(UpdateExpenseRequestSchema, request.body, reply);
     if (!body) return;
 
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
+    }
+
+    const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+    if (!expense || expense.tripId !== tripId) {
+      return reply.status(404).send({ error: 'Expense not found' });
     }
 
     await prisma.expense.update({
@@ -69,9 +85,19 @@ export default async function expensesRouter(fastify: FastifyInstance) {
       const { id: tripId, expenseId } = request.params as { id: string; expenseId: string };
       const user = await getUserFromRequest(request);
 
+      const rateLimitResult = await rateLimit.api.limit(user.id);
+      if (!rateLimitResult.success) {
+        return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+      }
+
       const canEdit = await canEditTrip(tripId, user.id);
       if (!canEdit) {
         return reply.status(403).send({ error: 'Not authorized to edit this trip' });
+      }
+
+      const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+      if (!expense || expense.tripId !== tripId) {
+        return reply.status(404).send({ error: 'Expense not found' });
       }
 
       await prisma.expense.delete({ where: { id: expenseId } });

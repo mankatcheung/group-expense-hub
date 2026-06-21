@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { validateOrigin } from '@/lib/validate-origin';
 
 const AUTH_PAGES = ['/login', '/register', '/forgot-password', '/reset-password'];
 
 export function proxy(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const host = request.headers.get('host');
   const { pathname, searchParams } = request.nextUrl;
 
+  // Note: this middleware's matcher excludes /api/* — origin validation for
+  // those routes lives in apps/web/app/api/[...path]/route.ts instead, since
+  // that's the code path that actually runs for API requests.
   const isFormSubmission =
     request.method === 'POST' ||
     request.method === 'PUT' ||
@@ -16,31 +18,11 @@ export function proxy(request: NextRequest) {
 
   const isServerAction =
     isFormSubmission &&
-    (pathname.startsWith('/api/') ||
-      pathname.startsWith('/trpc/') ||
-      request.headers.get('x-nextjs-data') === '1');
+    (pathname.startsWith('/trpc/') || request.headers.get('x-nextjs-data') === '1');
 
   if (isServerAction) {
-    if (origin) {
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${host}`;
-      allowedOrigins.push(appUrl);
-      allowedOrigins.push('http://localhost:3000');
-      allowedOrigins.push('http://127.0.0.1:3000');
-
-      const normalizedOrigin = origin.replace(/\/$/, '');
-
-      const isAllowed = allowedOrigins.some((allowed) => {
-        const normalizedAllowed = allowed.replace(/\/$/, '');
-        return normalizedOrigin === normalizedAllowed;
-      });
-
-      if (!isAllowed) {
-        return NextResponse.json({ error: 'Invalid origin header' }, { status: 403 });
-      }
-    } else if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Missing origin header' }, { status: 403 });
-    }
+    const originError = validateOrigin(request);
+    if (originError) return originError;
   }
 
   const sessionToken =

@@ -4,6 +4,7 @@ import { getUserFromRequest } from '../lib/get-session.js';
 import { canEditTrip } from './trips.js';
 import { CreateMemberRequestSchema, UpdateMemberRequestSchema } from '@group-expense-hub/db/schemas';
 import { parseBody } from '../lib/validate-request.js';
+import { rateLimit } from '../plugins/ratelimit.js';
 
 export default async function membersRouter(fastify: FastifyInstance) {
   fastify.post('/:id/members', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -11,6 +12,11 @@ export default async function membersRouter(fastify: FastifyInstance) {
     const user = await getUserFromRequest(request);
     const body = parseBody(CreateMemberRequestSchema, request.body, reply);
     if (!body) return;
+
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
 
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
@@ -28,9 +34,19 @@ export default async function membersRouter(fastify: FastifyInstance) {
     const body = parseBody(UpdateMemberRequestSchema, request.body, reply);
     if (!body) return;
 
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
+    }
+
+    const member = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!member || member.tripId !== tripId) {
+      return reply.status(404).send({ error: 'Member not found' });
     }
 
     return prisma.member.update({ where: { id: memberId }, data: { name: body.name } });
@@ -40,13 +56,18 @@ export default async function membersRouter(fastify: FastifyInstance) {
     const { id: tripId, memberId } = request.params as { id: string; memberId: string };
     const user = await getUserFromRequest(request);
 
+    const rateLimitResult = await rateLimit.api.limit(user.id);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const canEdit = await canEditTrip(tripId, user.id);
     if (!canEdit) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
     }
 
     const member = await prisma.member.findUnique({ where: { id: memberId } });
-    if (!member) {
+    if (!member || member.tripId !== tripId) {
       return reply.status(404).send({ error: 'Member not found' });
     }
 

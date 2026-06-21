@@ -180,11 +180,7 @@ function IndexContent() {
             ) : trips.length > 0 ? (
               <div className="space-y-3">
                 {trips.map((trip) => {
-                  const totalByCurrency = trip.expenses.reduce<Record<string, number>>((acc, e) => {
-                    acc[e.currency] = (acc[e.currency] || 0) + e.amount;
-                    return acc;
-                  }, {});
-                  const totals = Object.entries(totalByCurrency);
+                  const totals = Object.entries(trip.totalsByCurrency);
 
                   return (
                     <div
@@ -198,8 +194,8 @@ function IndexContent() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{trip.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {trip.members.length} member{trip.members.length !== 1 ? 's' : ''} ·{' '}
-                          {trip.expenses.length} expense{trip.expenses.length !== 1 ? 's' : ''}
+                          {trip.memberCount} member{trip.memberCount !== 1 ? 's' : ''} ·{' '}
+                          {trip.expenseCount} expense{trip.expenseCount !== 1 ? 's' : ''}
                           {totals.length > 0 && (
                             <span>
                               {' '}
