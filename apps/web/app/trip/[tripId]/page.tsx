@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useTrip } from '@/context/TripContext';
+import { useTripDetail } from '@/hooks/use-trip-detail';
 import { calculateBalances } from '@/lib/balances';
 import ExpenseList from '@/components/ExpenseList';
 import BalanceSummary from '@/components/BalanceSummary';
@@ -24,7 +24,7 @@ function TripDetailContent() {
   const searchParams = useSearchParams();
   const tripId = params.tripId as string;
   const {
-    getTrip,
+    trip,
     isLoading,
     error,
     removeExpense,
@@ -35,8 +35,8 @@ function TripDetailContent() {
     removeMember,
     inviteMember,
     removeCollaborator,
-    refreshTrips,
-  } = useTrip();
+    refreshTrip,
+  } = useTripDetail(tripId);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -50,8 +50,6 @@ function TripDetailContent() {
     router.push(`?${params.toString()}`);
   };
 
-  const trip = getTrip(tripId);
-
   const handleStartEditName = () => {
     if (trip) {
       setTripName(trip.name);
@@ -61,7 +59,7 @@ function TripDetailContent() {
 
   const handleSaveName = () => {
     if (trip && tripName.trim()) {
-      updateTrip(trip.id, tripName.trim());
+      updateTrip(tripName.trim());
     }
     setIsEditingName(false);
   };
@@ -88,7 +86,7 @@ function TripDetailContent() {
             <p className="text-destructive text-sm font-medium mb-1">Failed to load trip</p>
             <p className="text-muted-foreground text-xs mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" size="sm" onClick={refreshTrips}>
+              <Button variant="outline" size="sm" onClick={refreshTrip}>
                 Try Again
               </Button>
               <Button variant="outline" size="sm" onClick={() => router.push('/')}>
@@ -117,7 +115,7 @@ function TripDetailContent() {
   const balances = calculateBalances(trip.expenses);
 
   const handleInvite = async (email: string) => {
-    await inviteMember(trip.id, email);
+    await inviteMember(email);
   };
 
   return (
@@ -243,7 +241,7 @@ function TripDetailContent() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeCollaborator(trip.id, member.id)}
+                        onClick={() => removeCollaborator(member.id)}
                       >
                         <UserMinus className="h-4 w-4" />
                       </Button>
@@ -263,9 +261,9 @@ function TripDetailContent() {
               <MemberManager
                 members={trip.members}
                 tripId={trip.id}
-                onAdd={(m) => addMember(trip.id, m)}
-                onUpdate={(memberId, name) => updateMember(trip.id, memberId, name)}
-                onRemove={(id) => removeMember(trip.id, id)}
+                onAdd={(m) => addMember(m)}
+                onUpdate={(memberId, name) => updateMember(memberId, name)}
+                onRemove={(id) => removeMember(id)}
               />
             </div>
           </TabsContent>
@@ -278,8 +276,8 @@ function TripDetailContent() {
             <ExpenseList
               expenses={trip.expenses}
               members={trip.members}
-              onRemove={(expenseId) => removeExpense(trip.id, expenseId)}
-              onUpdate={(expense) => updateExpense(trip.id, expense)}
+              onRemove={(expenseId) => removeExpense(expenseId)}
+              onUpdate={(expense) => updateExpense(expense)}
             />
           </TabsContent>
         </Tabs>
