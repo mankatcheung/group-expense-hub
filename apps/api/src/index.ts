@@ -10,6 +10,7 @@ import expensesRouter from './routes/expenses.js';
 import invitationsRouter from './routes/invitations.js';
 import userRouter from './routes/user.js';
 import { rateLimit } from './plugins/ratelimit.js';
+import { getTrustedOrigins } from './lib/trusted-origins.js';
 
 const PORT = parseInt(process.env.PORT || '4040');
 const isDev = process.env.NODE_ENV !== 'production';
@@ -78,8 +79,14 @@ await fastify.register(helmet, {
   contentSecurityPolicy: false,
 });
 
+const trustedOrigins = getTrustedOrigins();
+
 await fastify.register(cors, {
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow non-browser/same-origin requests (no Origin header).
+    if (!origin) return callback(null, true);
+    callback(null, trustedOrigins.includes(origin));
+  },
   credentials: true,
 });
 
@@ -91,6 +98,11 @@ fastify.get('/health', async () => ({ status: 'ok' }));
 
 await fastify.register(async function (fastify) {
   fastify.all('/api/auth/*', async (request, reply) => {
+    const rateLimitResult = await rateLimit.auth.limit(request.ip);
+    if (!rateLimitResult.success) {
+      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+    }
+
     const path = request.url.replace('/api/auth', '');
     const method = request.method.toUpperCase();
 

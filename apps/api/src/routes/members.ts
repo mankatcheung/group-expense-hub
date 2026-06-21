@@ -29,6 +29,11 @@ export default async function membersRouter(fastify: FastifyInstance) {
       return reply.status(403).send({ error: 'Not authorized to edit this trip' });
     }
 
+    const member = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!member || member.tripId !== tripId) {
+      return reply.status(404).send({ error: 'Member not found' });
+    }
+
     return prisma.member.update({ where: { id: memberId }, data: { name: body.name } });
   });
 
@@ -42,7 +47,7 @@ export default async function membersRouter(fastify: FastifyInstance) {
     }
 
     const member = await prisma.member.findUnique({ where: { id: memberId } });
-    if (!member) {
+    if (!member || member.tripId !== tripId) {
       return reply.status(404).send({ error: 'Member not found' });
     }
 

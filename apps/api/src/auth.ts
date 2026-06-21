@@ -5,6 +5,7 @@ import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { sendPasswordResetEmail } from './services/email.js';
 import { SESSION } from '@group-expense-hub/db/constants';
+import { getTrustedOrigins } from './lib/trusted-origins.js';
 
 const dbUrl = process.env.TURSO_DATABASE_URL || 'file:./dev.db';
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -16,24 +17,11 @@ const adapter = new PrismaLibSql({
 
 const prisma = new PrismaClient({ adapter });
 
-const getTrustedOrigins = (): string[] => {
-  const origins = [
-    'http://localhost:3000',
-    'http://localhost:4040',
-    'https://localhost:3000',
-    'https://localhost:4040',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:4040',
-  ];
-
-  if (process.env.BETTER_AUTH_URL) origins.push(process.env.BETTER_AUTH_URL);
-  if (process.env.NEXT_PUBLIC_APP_URL) origins.push(process.env.NEXT_PUBLIC_APP_URL);
-  if (process.env.NEXT_PUBLIC_API_URL) origins.push(process.env.NEXT_PUBLIC_API_URL);
-
-  return origins.filter(Boolean);
-};
-
 const isDev = process.env.NODE_ENV !== 'production';
+
+// Origin checks must be explicitly opted out via env var rather than inferred
+// from NODE_ENV, so a misconfigured deployment can't silently disable them.
+const disableOriginCheck = process.env.DISABLE_ORIGIN_CHECK === 'true';
 
 const apiUrl =
   process.env.NEXT_PUBLIC_API_URL || process.env.BETTER_AUTH_URL || 'http://localhost:4040';
@@ -45,7 +33,7 @@ export const auth: any = betterAuth({
   }),
   baseURL: apiUrl,
   advanced: {
-    disableOriginCheck: isDev,
+    disableOriginCheck,
   },
   emailAndPassword: {
     enabled: true,
