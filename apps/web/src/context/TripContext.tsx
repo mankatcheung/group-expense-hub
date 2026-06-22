@@ -5,6 +5,7 @@ import { api } from '@/services/api';
 import { CACHE } from '@/lib/constants';
 import { TRIPS_KEY, tripDetailKey } from '@/lib/trip-query-keys';
 import { handleApiError } from '@/lib/error-handler';
+import { useAuth } from '@/context/AuthContext';
 
 interface TripContextType {
   trips: TripSummary[];
@@ -19,17 +20,31 @@ const TripContext = createContext<TripContextType | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const {
     data: trips = [],
-    isLoading,
+    isPending: tripsPending,
     error,
   } = useQuery({
     queryKey: TRIPS_KEY,
     queryFn: () => api.getTrips(),
     staleTime: CACHE.TRIPS_STALE_TIME,
     gcTime: CACHE.TRIPS_GC_TIME,
+    // Without this, the query fires immediately on mount on every page
+    // (including /login, before there's a session) and the resulting
+    // failed/empty result stays cached across the client-side navigation
+    // to "/" after a successful login - nothing else invalidates it.
+    // Gating on auth state means it (re)fires exactly when isAuthenticated
+    // flips to true, which covers both the initial load and post-login.
+    enabled: isAuthenticated,
   });
+
+  // react-query's own `isLoading` is `isPending && isFetching`, which is
+  // false while `enabled` is false - that would flash an empty trips list
+  // during the brief window before the auth check resolves. Folding in the
+  // auth provider's own loading state avoids that gap.
+  const isLoading = authLoading || (isAuthenticated && tripsPending);
 
   // These mutations already have a matching optimistic update applied via
   // setTrips before mutate() is called (see the callbacks below), so onSuccess
