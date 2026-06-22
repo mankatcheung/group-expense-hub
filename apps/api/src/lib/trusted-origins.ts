@@ -8,12 +8,9 @@ export function getTrustedOrigins(): string[] {
     'http://127.0.0.1:4040',
   ];
 
-  console.log(`NEXT_PUBLIC_APP_URL: ${process.env.NEXT_PUBLIC_APP_URL}`);
   if (process.env.BETTER_AUTH_URL) origins.push(process.env.BETTER_AUTH_URL);
   if (process.env.NEXT_PUBLIC_APP_URL) origins.push(process.env.NEXT_PUBLIC_APP_URL);
   if (process.env.NEXT_PUBLIC_API_URL) origins.push(process.env.NEXT_PUBLIC_API_URL);
 
-  const result = origins.filter(Boolean);
-  console.log(`trusted origins: ${result.join(', ')}`);
-  return result;
+  return origins.filter(Boolean);
 }
