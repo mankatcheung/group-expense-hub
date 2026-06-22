@@ -1,50 +1,6 @@
-export interface Member {
-  id: string;
-  name: string;
-  color: string;
-}
+import type { TripUser } from '@group-expense-hub/db/types';
 
-export interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  currency: string;
-  paidBy: string;
-  splitAmong: string[];
-  date: string;
-}
-
-export interface Balance {
-  from: string;
-  to: string;
-  amount: number;
-  currency: string;
-}
-
-export interface TripUser {
-  id: string;
-  name: string | null;
-  email: string;
-  image: string | null;
-}
-
-export interface TripMember {
-  id: string;
-  userId: string;
-  role: string;
-  user: TripUser;
-}
-
-export interface Trip {
-  id: string;
-  name: string;
-  members: Member[];
-  tripMembers: TripMember[];
-  expenses: Expense[];
-  createdAt: string;
-  isOwner: boolean;
-  owner: TripUser | null;
-}
+export type { Member, Expense, Balance, TripUser, TripMember, Trip } from '@group-expense-hub/db/types';
 
 /** Lightweight shape for the trip list view — avoids shipping every trip's
  * full nested members/expenses/splits when only counts and totals are shown. */

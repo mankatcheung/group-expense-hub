@@ -17,6 +17,7 @@
   "dependencies": {
     "@better-auth/core": "^1.5.3",
     "@better-auth/prisma-adapter": "^1.5.3",
+    "@group-expense-hub/db": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-better-sqlite3": "^7.4.2",
