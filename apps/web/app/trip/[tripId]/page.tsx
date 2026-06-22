@@ -6,7 +6,7 @@ import { useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTripDetail } from '@/hooks/use-trip-detail';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
-import { calculateBalances } from '@/lib/balances';
+import { calculateBalances } from '@group-expense-hub/db/balances';
 import ExpenseList from '@/components/ExpenseList';
 import BalanceSummary from '@/components/BalanceSummary';
 import MemberManager from '@/components/MemberManager';

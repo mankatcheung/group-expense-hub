@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBalances } from '@/lib/balances';
+import { calculateBalances } from '@group-expense-hub/db/balances';
 import type { Expense } from '@/lib/types';
 
 describe('balances', () => {

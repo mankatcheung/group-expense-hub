@@ -1,4 +1,4 @@
-import { Expense, Balance } from './types';
+import type { Expense, Balance } from './types';
 
 export function calculateBalances(expenses: Expense[]): Balance[] {
   // Group by currency
