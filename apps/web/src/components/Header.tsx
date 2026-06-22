@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,10 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Plane, Settings, Sun, Moon, User } from 'lucide-react';
+import { LogOut, Plane, Settings, Sun, Moon, User, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { handleApiError } from '@/lib/error-handler';
+import { useNavigationProgress } from '@/context/NavigationProgressContext';
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -22,14 +24,18 @@ interface HeaderProps {
 export default function Header({ showBackButton, onBack }: HeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { navigate } = useNavigationProgress();
   const { theme, setTheme } = useTheme();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
       router.push('/login');
     } catch (err) {
       handleApiError(err, 'Failed to log out');
+      setIsLoggingOut(false);
     }
   };
 
@@ -57,10 +63,20 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2" aria-label="User menu">
-              <User className="h-4 w-4" aria-hidden="true" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              aria-label="User menu"
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <User className="h-4 w-4" aria-hidden="true" />
+              )}
               <span className="sr-only">User menu</span>
-              {user?.name || user?.email?.split('@')[0]}
+              {isLoggingOut ? 'Signing out...' : user?.name || user?.email?.split('@')[0]}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
@@ -78,7 +94,7 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>

@@ -6,6 +6,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/context/AuthContext';
 import { TripProvider } from '@/context/TripContext';
+import { NavigationProgressProvider } from '@/context/NavigationProgressContext';
+import { NavigationProgressBar } from '@/components/NavigationProgressBar';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
@@ -29,7 +31,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Toaster />
               <Sonner />
               <AuthProvider>
-                <TripProvider>{children}</TripProvider>
+                <TripProvider>
+                  <NavigationProgressProvider>
+                    <NavigationProgressBar />
+                    {children}
+                  </NavigationProgressProvider>
+                </TripProvider>
               </AuthProvider>
             </TooltipProvider>
           </QueryClientProvider>

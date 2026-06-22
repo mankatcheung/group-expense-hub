@@ -2,13 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plane } from 'lucide-react';
+import { Plane, Loader2 } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
 
 export default function RegisterPage() {
@@ -19,13 +19,14 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const { register, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const [isSubmitting, startTransition] = useTransition();
 
   if (!isLoading && isAuthenticated) {
     router.replace('/');
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -34,12 +35,14 @@ export default function RegisterPage() {
       return;
     }
 
-    try {
-      await register(name, email, password);
-      router.push('/');
-    } catch (err) {
-      handleApiError(err, 'Failed to register');
-    }
+    startTransition(async () => {
+      try {
+        await register(name, email, password);
+        router.push('/');
+      } catch (err) {
+        handleApiError(err, 'Failed to register');
+      }
+    });
   };
 
   return (
@@ -60,6 +63,7 @@ export default function RegisterPage() {
               placeholder="Full Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
@@ -69,6 +73,7 @@ export default function RegisterPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
@@ -78,6 +83,7 @@ export default function RegisterPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
@@ -87,14 +93,22 @@ export default function RegisterPage() {
               placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
 
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
-          <Button type="submit" className="w-full">
-            Sign Up
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              'Sign Up'
+            )}
           </Button>
         </form>
 
