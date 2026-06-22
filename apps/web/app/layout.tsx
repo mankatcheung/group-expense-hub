@@ -9,7 +9,6 @@ import { TripProvider } from '@/context/TripContext';
 import { NavigationProgressProvider } from '@/context/NavigationProgressContext';
 import { NavigationProgressBar } from '@/components/NavigationProgressBar';
 import { Toaster as Sonner } from '@/components/ui/sonner';
-import { Toaster } from '@/components/ui/toaster';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import '@/index.css';
 
@@ -28,7 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-              <Toaster />
               <Sonner />
               <AuthProvider>
                 <TripProvider>
