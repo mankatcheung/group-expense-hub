@@ -2,16 +2,16 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useTrip } from '@/context/TripContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
+import { useInvitations } from '@/hooks/use-invitations';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import { TripCardSkeleton, InvitationSkeleton } from '@/components/Skeletons';
-import { handleApiError } from '@/lib/error-handler';
 import {
   Plus,
   Trash2,
@@ -24,21 +24,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/currencies';
-import { api } from '@/services/api';
-
-interface Invitation {
-  id: string;
-  token: string;
-  tripId: string;
-  tripName: string;
-  inviter: {
-    id: string;
-    name: string | null;
-    email: string;
-    image: string | null;
-  } | null;
-  createdAt: string;
-}
 
 function IndexContent() {
   const { trips, isLoading, error, createTrip, deleteTrip, refreshTrips } = useTrip();
@@ -46,67 +31,15 @@ function IndexContent() {
   const { navigate } = useNavigationProgress();
   const searchParams = useSearchParams();
   const [tripName, setTripName] = useState('');
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [loadingInvitations, setLoadingInvitations] = useState(false);
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
-  const [isJoiningTrip, setIsJoiningTrip] = useState(false);
+  const { invitations, loadingInvitations, acceptingId, isJoiningTrip, handleAccept } =
+    useInvitations();
 
   const currentTab = searchParams.get('tab') || 'trips';
-
-  useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      handleJoinByToken(token);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  useEffect(() => {
-    loadInvitations();
-  }, []);
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', value);
     router.push(`?${params.toString()}`);
-  };
-
-  const loadInvitations = async () => {
-    setLoadingInvitations(true);
-    try {
-      const data = await api.getInvitations();
-      setInvitations(data);
-    } catch (err) {
-      handleApiError(err, 'Failed to load invitations');
-    } finally {
-      setLoadingInvitations(false);
-    }
-  };
-
-  const handleJoinByToken = async (token: string) => {
-    setIsJoiningTrip(true);
-    try {
-      const result = await api.joinTrip(token);
-      refreshTrips();
-      router.push(`/trip/${result.tripId}`);
-    } catch (err) {
-      handleApiError(err, 'Failed to join trip');
-      setIsJoiningTrip(false);
-    }
-  };
-
-  const handleAccept = async (id: string) => {
-    setAcceptingId(id);
-    try {
-      const result = await api.acceptInvitation(id);
-      refreshTrips();
-      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
-      router.push(`/trip/${result.tripId}`);
-    } catch (err) {
-      handleApiError(err, 'Failed to accept invitation');
-    } finally {
-      setAcceptingId(null);
-    }
   };
 
   const handleCreate = () => {
