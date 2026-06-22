@@ -119,6 +119,13 @@ await fastify.register(async function (fastify) {
     if (request.headers['content-type']) {
       headers['content-type'] = request.headers['content-type'];
     }
+    // better-auth's own origin-check middleware only runs when the request
+    // carries a cookie (e.g. sign-out, where a session already exists) and
+    // requires this header to be present and trusted - without forwarding
+    // it, authenticated actions like sign-out fail with 403 MISSING_OR_NULL_ORIGIN.
+    if (request.headers.origin) {
+      headers.origin = request.headers.origin;
+    }
 
     const authRequest = new Request(
       `${process.env.BETTER_AUTH_URL || 'http://localhost:4040'}/api/auth${path}`,
