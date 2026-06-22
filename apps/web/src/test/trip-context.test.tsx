@@ -3,8 +3,10 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { TripProvider, useTrip } from '@/context/TripContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { useTripDetail } from '@/hooks/use-trip-detail';
 import { api } from '@/services/api';
+import { authClient } from '@/lib/auth-client';
 import { handleApiError } from '@/lib/error-handler';
 import type { Trip, TripSummary } from '@/lib/types';
 
@@ -29,6 +31,26 @@ vi.mock('@/services/api', () => ({
 vi.mock('@/lib/error-handler', () => ({
   handleApiError: vi.fn(),
 }));
+
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    useSession: vi.fn(),
+    signIn: { email: vi.fn() },
+    signUp: { email: vi.fn() },
+    signOut: vi.fn(),
+  },
+}));
+
+function mockAuthenticatedSession() {
+  vi.mocked(authClient.useSession).mockReturnValue({
+    data: {
+      user: { id: 'user-1', name: 'Test User', email: 'test@example.com' },
+      session: { id: 'session-1' },
+    },
+    isPending: false,
+    refetch: vi.fn(),
+  } as never);
+}
 
 function makeSummary(overrides: Partial<TripSummary> = {}): TripSummary {
   return {
@@ -67,6 +89,7 @@ function newQueryClient() {
 describe('TripContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockAuthenticatedSession();
   });
 
   function renderTripHook(initialTrips: TripSummary[]) {
@@ -76,7 +99,9 @@ describe('TripContext', () => {
     function wrapper({ children }: { children: ReactNode }) {
       return (
         <QueryClientProvider client={queryClient}>
-          <TripProvider>{children}</TripProvider>
+          <AuthProvider>
+            <TripProvider>{children}</TripProvider>
+          </AuthProvider>
         </QueryClientProvider>
       );
     }
@@ -91,6 +116,60 @@ describe('TripContext', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.trips).toEqual([summary]);
+  });
+
+  it('does not fetch trips while there is no authenticated session', async () => {
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      refetch: vi.fn(),
+    } as never);
+    vi.mocked(api.getTrips).mockResolvedValue([makeSummary()]);
+
+    renderTripHook([]);
+
+    // Give any (incorrectly) in-flight fetch a chance to fire.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(vi.mocked(api.getTrips)).not.toHaveBeenCalled();
+  });
+
+  it('fetches trips once authentication resolves to a session', async () => {
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+      refetch: vi.fn(),
+    } as never);
+    const summary = makeSummary();
+    vi.mocked(api.getTrips).mockResolvedValue([summary]);
+
+    const queryClient = newQueryClient();
+    function wrapper({ children }: { children: ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TripProvider>{children}</TripProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+    }
+    const { result, rerender } = renderHook(() => useTrip(), { wrapper });
+
+    expect(vi.mocked(api.getTrips)).not.toHaveBeenCalled();
+
+    // Simulate a successful login: the session query now resolves to an
+    // authenticated user.
+    mockAuthenticatedSession();
+    rerender();
+
+    await waitFor(() => {
+      expect(vi.mocked(api.getTrips)).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(result.current.trips).toEqual([summary]);
+    });
   });
 
   it('rolls back an optimistic delete when the mutation fails', async () => {
