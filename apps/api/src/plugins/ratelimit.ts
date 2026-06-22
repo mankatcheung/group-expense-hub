@@ -63,7 +63,7 @@ export class InMemoryRateLimiter {
 const WINDOW_MS = 60_000;
 
 export const rateLimit = {
-  auth: new InMemoryRateLimiter(5, WINDOW_MS),
-  api: new InMemoryRateLimiter(30, WINDOW_MS),
-  email: new InMemoryRateLimiter(3, WINDOW_MS),
+  auth: new InMemoryRateLimiter(20, WINDOW_MS),
+  api: new InMemoryRateLimiter(100, WINDOW_MS),
+  email: new InMemoryRateLimiter(5, WINDOW_MS),
 };
