@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, Suspense } from 'react';
 import { useTrip } from '@/context/TripContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useNavigationProgress } from '@/context/NavigationProgressContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -42,11 +43,13 @@ interface Invitation {
 function IndexContent() {
   const { trips, isLoading, error, createTrip, deleteTrip, refreshTrips } = useTrip();
   const router = useRouter();
+  const { navigate } = useNavigationProgress();
   const searchParams = useSearchParams();
   const [tripName, setTripName] = useState('');
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [isJoiningTrip, setIsJoiningTrip] = useState(false);
 
   const currentTab = searchParams.get('tab') || 'trips';
 
@@ -81,12 +84,14 @@ function IndexContent() {
   };
 
   const handleJoinByToken = async (token: string) => {
+    setIsJoiningTrip(true);
     try {
       const result = await api.joinTrip(token);
       refreshTrips();
       router.push(`/trip/${result.tripId}`);
     } catch (err) {
       handleApiError(err, 'Failed to join trip');
+      setIsJoiningTrip(false);
     }
   };
 
@@ -109,8 +114,17 @@ function IndexContent() {
     if (!name) return;
     const trip = createTrip(name);
     setTripName('');
-    router.push(`/trip/${trip.id}`);
+    navigate(`/trip/${trip.id}`);
   };
+
+  if (isJoiningTrip) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Joining trip...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,7 +200,7 @@ function IndexContent() {
                     <div
                       key={trip.id}
                       className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-colors hover:bg-muted/50"
-                      onClick={() => router.push(`/trip/${trip.id}`)}
+                      onClick={() => navigate(`/trip/${trip.id}`)}
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <MapPin className="h-5 w-5" />

@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTripDetail } from '@/hooks/use-trip-detail';
+import { useNavigationProgress } from '@/context/NavigationProgressContext';
 import { calculateBalances } from '@/lib/balances';
 import ExpenseList from '@/components/ExpenseList';
 import BalanceSummary from '@/components/BalanceSummary';
@@ -21,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 function TripDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const { navigate } = useNavigationProgress();
   const searchParams = useSearchParams();
   const tripId = params.tripId as string;
   const {
@@ -79,7 +81,7 @@ function TripDetailContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showBackButton onBack={() => router.push('/')} />
+        <Header showBackButton onBack={() => navigate('/')} />
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
           <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
@@ -89,7 +91,7 @@ function TripDetailContent() {
               <Button variant="outline" size="sm" onClick={refreshTrip}>
                 Try Again
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/')}>
                 Go Home
               </Button>
             </div>
@@ -104,7 +106,7 @@ function TripDetailContent() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Trip not found</p>
-          <Button variant="outline" onClick={() => router.push('/')}>
+          <Button variant="outline" onClick={() => navigate('/')}>
             Go Home
           </Button>
         </div>
@@ -120,13 +122,13 @@ function TripDetailContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBackButton onBack={() => router.push('/')} />
+      <Header showBackButton onBack={() => navigate('/')} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-6">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/')}
+            onClick={() => navigate('/')}
             className="gap-2 text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -269,7 +271,7 @@ function TripDetailContent() {
           </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">
-            <Button onClick={() => router.push(`/trip/${trip.id}/add`)} className="w-full gap-2">
+            <Button onClick={() => navigate(`/trip/${trip.id}/add`)} className="w-full gap-2">
               <Plus className="h-4 w-4" />
               Add Expense
             </Button>

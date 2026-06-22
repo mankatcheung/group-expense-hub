@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Header from '@/components/Header';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import { handleApiError } from '@/lib/error-handler';
+import { useNavigationProgress } from '@/context/NavigationProgressContext';
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
-  const router = useRouter();
+  const { goBack } = useNavigationProgress();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -91,7 +91,7 @@ export default function SettingsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.back()}
+            onClick={goBack}
             className="text-muted-foreground gap-1"
           >
             ← Back

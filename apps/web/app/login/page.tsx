@@ -2,13 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plane } from 'lucide-react';
+import { Plane, Loader2 } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
 
 export default function LoginPage() {
@@ -16,20 +16,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const [isSubmitting, startTransition] = useTransition();
 
   if (!isLoading && isAuthenticated) {
     router.replace('/');
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login(email, password);
-      router.push('/');
-    } catch (err) {
-      handleApiError(err, 'Failed to login');
-    }
+    startTransition(async () => {
+      try {
+        await login(email, password);
+        router.push('/');
+      } catch (err) {
+        handleApiError(err, 'Failed to login');
+      }
+    });
   };
 
   return (
@@ -52,6 +55,7 @@ export default function LoginPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
@@ -61,12 +65,20 @@ export default function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
               required
             />
           </div>
 
-          <Button type="submit" className="w-full">
-            Sign In
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </Button>
         </form>
 

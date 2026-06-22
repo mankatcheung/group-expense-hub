@@ -2,8 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTripDetail } from '@/hooks/use-trip-detail';
+import { useNavigationProgress } from '@/context/NavigationProgressContext';
 import AddExpense from '@/components/AddExpense';
 import Header from '@/components/Header';
 import { FormSkeleton } from '@/components/Skeletons';
@@ -12,14 +13,14 @@ import { Button } from '@/components/ui/button';
 
 export default function AddExpensePage() {
   const params = useParams();
-  const router = useRouter();
+  const { navigate } = useNavigationProgress();
   const tripId = params.tripId as string;
   const { trip, addExpense, isLoading, error, refreshTrip } = useTripDetail(tripId);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showBackButton onBack={() => router.push(`/trip/${tripId}`)} />
+        <Header showBackButton onBack={() => navigate(`/trip/${tripId}`)} />
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12 space-y-6">
           <div className="text-center space-y-2">
             <div className="h-14 w-14 rounded-2xl mx-auto bg-muted animate-pulse" />
@@ -37,7 +38,7 @@ export default function AddExpensePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <Header showBackButton onBack={() => router.push(`/trip/${tripId}`)} />
+        <Header showBackButton onBack={() => navigate(`/trip/${tripId}`)} />
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
           <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
@@ -47,7 +48,7 @@ export default function AddExpensePage() {
               <Button variant="outline" size="sm" onClick={refreshTrip}>
                 Try Again
               </Button>
-              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/')}>
                 Go Home
               </Button>
             </div>
@@ -62,7 +63,7 @@ export default function AddExpensePage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Trip not found</p>
-          <Button variant="outline" onClick={() => router.push('/')}>
+          <Button variant="outline" onClick={() => navigate('/')}>
             Go Home
           </Button>
         </div>
@@ -72,7 +73,7 @@ export default function AddExpensePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBackButton onBack={() => router.push(`/trip/${trip.id}`)} />
+      <Header showBackButton onBack={() => navigate(`/trip/${trip.id}`)} />
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
