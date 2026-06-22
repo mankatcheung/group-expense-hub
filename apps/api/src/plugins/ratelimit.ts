@@ -1,39 +1,69 @@
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+interface RateLimitResult {
+  success: boolean;
+  remaining: number;
+  reset: number;
+}
 
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+interface WindowEntry {
+  count: number;
+  windowStart: number;
+}
 
-const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
+/**
+ * Fixed-window rate limiter backed by an in-memory Map, scoped to this
+ * process. Each limiter sweeps its own expired entries on an interval sized
+ * to its window so memory doesn't grow unbounded with one-off identifiers.
+ *
+ * Note: state isn't shared across instances, so limits are per-process. If
+ * the API ever runs with multiple replicas, each replica enforces its own
+ * limit independently rather than a single shared limit.
+ */
+export class InMemoryRateLimiter {
+  private readonly hits = new Map<string, WindowEntry>();
+
+  constructor(
+    private readonly max: number,
+    private readonly windowMs: number
+  ) {
+    const sweep = setInterval(() => this.sweepExpired(), this.windowMs);
+    sweep.unref?.();
+  }
+
+  private sweepExpired() {
+    const now = Date.now();
+    for (const [key, entry] of this.hits) {
+      if (now - entry.windowStart >= this.windowMs) {
+        this.hits.delete(key);
+      }
+    }
+  }
+
+  async limit(identifier: string): Promise<RateLimitResult> {
+    const now = Date.now();
+    const entry = this.hits.get(identifier);
+
+    if (!entry || now - entry.windowStart >= this.windowMs) {
+      this.hits.set(identifier, { count: 1, windowStart: now });
+      return { success: true, remaining: this.max - 1, reset: now + this.windowMs };
+    }
+
+    if (entry.count >= this.max) {
+      return { success: false, remaining: 0, reset: entry.windowStart + this.windowMs };
+    }
+
+    entry.count += 1;
+    return {
+      success: true,
+      remaining: this.max - entry.count,
+      reset: entry.windowStart + this.windowMs,
+    };
+  }
+}
+
+const WINDOW_MS = 60_000;
 
 export const rateLimit = {
-  auth: redis
-    ? new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(5, '60 s'),
-        prefix: 'rate:auth',
-      })
-    : {
-        limit: async () => ({ success: true, remaining: 5, reset: 0 }),
-      },
-
-  api: redis
-    ? new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(30, '60 s'),
-        prefix: 'rate:api',
-      })
-    : {
-        limit: async () => ({ success: true, remaining: 30, reset: 0 }),
-      },
-
-  email: redis
-    ? new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(3, '60 s'),
-        prefix: 'rate:email',
-      })
-    : {
-        limit: async () => ({ success: true, remaining: 3, reset: 0 }),
-      },
+  auth: new InMemoryRateLimiter(5, WINDOW_MS),
+  api: new InMemoryRateLimiter(30, WINDOW_MS),
+  email: new InMemoryRateLimiter(3, WINDOW_MS),
 };
