@@ -47,3 +47,7 @@ next-env.d.ts
 # Sentry Config File
 .env.sentry-build-plugin
 .turbo/
+
+# Local SQLite dev databases (regenerated via migrations/db:push)
+*.db
+*.db-journal
