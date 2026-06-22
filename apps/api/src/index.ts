@@ -100,7 +100,13 @@ await fastify.register(async function (fastify) {
   fastify.all('/api/auth/*', async (request, reply) => {
     const rateLimitResult = await rateLimit.auth.limit(request.ip);
     if (!rateLimitResult.success) {
-      return reply.status(429).send({ error: 'Too many requests. Please try again later.' });
+      // better-auth's client reads `message` (matching its own APIError
+      // shape), not `error` - the latter is only correctly read by our own
+      // fetchApi wrapper, which doesn't handle this auth-forwarder route.
+      return reply.status(429).send({
+        message: 'Too many requests. Please try again later.',
+        code: 'TOO_MANY_REQUESTS',
+      });
     }
 
     const path = request.url.replace('/api/auth', '');
