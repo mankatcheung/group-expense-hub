@@ -22,8 +22,6 @@
     "@group-expense-hub/db": "workspace:*",
     "@prisma/adapter-libsql": "^7.4.2",
     "@prisma/client": "^7.4.2",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.37.0",
     "better-auth": "^1.5.3",
     "brevo": "^1.0.0",
     "fastify": "^4.28.1",
