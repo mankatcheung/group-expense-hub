@@ -358,4 +358,306 @@ describe('useTripDetail', () => {
     // so the member should still be present since deletion was blocked.
     expect(result.current.trip?.members).toHaveLength(1);
   });
+
+  it('removes the member from the cache when the server confirms success', async () => {
+    const trip = makeTrip({ members: [{ id: 'm-1', name: 'Alice', color: '#EF4444' }] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeMember).mockResolvedValue({ success: true });
+
+    await act(async () => {
+      await result.current.removeMember('m-1');
+    });
+
+    await waitFor(() => expect(result.current.trip?.members).toEqual([]));
+  });
+
+  it('renames the trip optimistically and ignores a blank name', async () => {
+    const trip = makeTrip();
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.updateTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.updateTrip('  ');
+    });
+    expect(api.updateTrip).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.updateTrip('New Name');
+    });
+
+    await waitFor(() => expect(result.current.trip?.name).toBe('New Name'));
+    expect(api.updateTrip).toHaveBeenCalledWith('trip-1', { name: 'New Name' });
+  });
+
+  it('resyncs and reports an error when renaming the trip fails', async () => {
+    const trip = makeTrip();
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.updateTrip).mockRejectedValue(new Error('network error'));
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.updateTrip('New Name');
+    });
+
+    await waitFor(() =>
+      expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(expect.any(Error), 'Failed to rename trip')
+    );
+  });
+
+  it('updates a member name optimistically', async () => {
+    const trip = makeTrip({ members: [{ id: 'm-1', name: 'Alice', color: '#EF4444' }] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.updateMember).mockResolvedValue({ id: 'm-1', name: 'Alicia', color: '#EF4444' });
+
+    act(() => {
+      result.current.updateMember('m-1', 'Alicia');
+    });
+
+    await waitFor(() => expect(result.current.trip?.members[0]).toMatchObject({ name: 'Alicia' }));
+    expect(api.updateMember).toHaveBeenCalledWith('trip-1', 'm-1', { name: 'Alicia' });
+  });
+
+  it('resyncs and reports an error when updating a member fails', async () => {
+    const trip = makeTrip({ members: [{ id: 'm-1', name: 'Alice', color: '#EF4444' }] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.updateMember).mockRejectedValue(new Error('network error'));
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.updateMember('m-1', 'Alicia');
+    });
+
+    await waitFor(() =>
+      expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(expect.any(Error), 'Failed to update member')
+    );
+  });
+
+  it('adds an expense optimistically', async () => {
+    const trip = makeTrip();
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const expense = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    vi.mocked(api.addExpense).mockResolvedValue({ success: true });
+
+    act(() => {
+      result.current.addExpense(expense);
+    });
+
+    await waitFor(() => expect(result.current.trip?.expenses).toEqual([expense]));
+    expect(api.addExpense).toHaveBeenCalledWith('trip-1', expense);
+  });
+
+  it('rolls back an optimistic expense add when the mutation fails', async () => {
+    const trip = makeTrip();
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const expense = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    vi.mocked(api.addExpense).mockRejectedValue(new Error('network error'));
+
+    act(() => {
+      result.current.addExpense(expense);
+    });
+
+    await waitFor(() => expect(result.current.trip?.expenses).toEqual([]));
+    expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(expect.any(Error), 'Failed to add expense');
+  });
+
+  it('updates an expense optimistically', async () => {
+    const original = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    const trip = makeTrip({ expenses: [original] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const updated = { ...original, description: 'Lunch', amount: 30 };
+    vi.mocked(api.updateExpense).mockResolvedValue({ success: true });
+
+    act(() => {
+      result.current.updateExpense(updated);
+    });
+
+    await waitFor(() => expect(result.current.trip?.expenses).toEqual([updated]));
+    expect(api.updateExpense).toHaveBeenCalledWith('trip-1', updated);
+  });
+
+  it('resyncs and reports an error when updating an expense fails', async () => {
+    const original = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    const trip = makeTrip({ expenses: [original] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.updateExpense).mockRejectedValue(new Error('network error'));
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.updateExpense({ ...original, amount: 99 });
+    });
+
+    await waitFor(() =>
+      expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(expect.any(Error), 'Failed to update expense')
+    );
+  });
+
+  it('removes an expense optimistically', async () => {
+    const expense = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    const trip = makeTrip({ expenses: [expense] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeExpense).mockResolvedValue({ success: true });
+
+    act(() => {
+      result.current.removeExpense('e-1');
+    });
+
+    await waitFor(() => expect(result.current.trip?.expenses).toEqual([]));
+    expect(api.removeExpense).toHaveBeenCalledWith('trip-1', 'e-1');
+  });
+
+  it('resyncs and reports an error when removing an expense fails', async () => {
+    const expense = {
+      id: 'e-1',
+      description: 'Dinner',
+      amount: 20,
+      currency: 'USD',
+      paidBy: 'm-1',
+      splitAmong: ['m-1'],
+      date: new Date().toISOString(),
+    };
+    const trip = makeTrip({ expenses: [expense] });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeExpense).mockRejectedValue(new Error('network error'));
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.removeExpense('e-1');
+    });
+
+    await waitFor(() =>
+      expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(expect.any(Error), 'Failed to remove expense')
+    );
+  });
+
+  it('invites a member and resyncs the trip and trip-list caches', async () => {
+    const trip = makeTrip();
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.inviteMember).mockResolvedValue({ success: true, pending: true });
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    let response;
+    await act(async () => {
+      response = await result.current.inviteMember('a@example.com');
+    });
+
+    expect(api.inviteMember).toHaveBeenCalledWith('trip-1', 'a@example.com');
+    expect(response).toEqual({ success: true, pending: true });
+  });
+
+  it('removes a collaborator optimistically', async () => {
+    const trip = makeTrip({
+      tripMembers: [
+        {
+          id: 'tm-1',
+          userId: 'user-2',
+          role: 'collaborator',
+          user: { id: 'user-2', name: 'Bob', email: 'bob@example.com', image: null },
+        },
+      ],
+    });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeCollaborator).mockResolvedValue({ success: true });
+
+    act(() => {
+      result.current.removeCollaborator('tm-1');
+    });
+
+    await waitFor(() => expect(result.current.trip?.tripMembers).toEqual([]));
+    expect(api.removeCollaborator).toHaveBeenCalledWith('trip-1', 'tm-1');
+  });
+
+  it('resyncs and reports an error when removing a collaborator fails', async () => {
+    const trip = makeTrip({
+      tripMembers: [
+        {
+          id: 'tm-1',
+          userId: 'user-2',
+          role: 'collaborator',
+          user: { id: 'user-2', name: 'Bob', email: 'bob@example.com', image: null },
+        },
+      ],
+    });
+    const { result } = renderDetailHook(trip);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    vi.mocked(api.removeCollaborator).mockRejectedValue(new Error('network error'));
+    vi.mocked(api.getTrip).mockResolvedValue(trip);
+
+    act(() => {
+      result.current.removeCollaborator('tm-1');
+    });
+
+    await waitFor(() =>
+      expect(vi.mocked(handleApiError)).toHaveBeenCalledWith(
+        expect.any(Error),
+        'Failed to remove collaborator'
+      )
+    );
+  });
 });
