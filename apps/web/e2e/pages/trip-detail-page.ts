@@ -4,7 +4,7 @@ export class TripDetailPage {
   constructor(private readonly page: Page) {}
 
   async goto(tripId: string): Promise<void> {
-    await this.page.goto(`/trip/${tripId}`);
+    await this.page.goto(`/en/trip/${tripId}`);
   }
 
   get heading() {

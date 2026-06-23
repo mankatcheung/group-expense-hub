@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { Member } from '@/lib/types';
 import { Balance } from '@/lib/types';
 import { getCurrencySymbol } from '@/lib/currencies';
@@ -10,12 +11,13 @@ interface Props {
 }
 
 export default function BalanceSummary({ balances, members, isLoading }: Props) {
+  const t = useTranslations('trip');
   const getMember = (id: string) => members.find((m) => m.id === id);
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-display font-semibold text-foreground">Who Owes Who</h2>
+        <h2 className="text-lg font-display font-semibold text-foreground">{t('whoOwesWho')}</h2>
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-3">
@@ -33,11 +35,11 @@ export default function BalanceSummary({ balances, members, isLoading }: Props) 
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-display font-semibold text-foreground">Who Owes Who</h2>
+      <h2 className="text-lg font-display font-semibold text-foreground">{t('whoOwesWho')}</h2>
       {balances.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-6 text-center">
           <CheckCircle2 className="mx-auto h-10 w-10 text-success mb-3" />
-          <p className="text-sm text-muted-foreground">All settled up! 🎉</p>
+          <p className="text-sm text-muted-foreground">{t('allSettledUp')}</p>
         </div>
       ) : (
         <div className="space-y-2">

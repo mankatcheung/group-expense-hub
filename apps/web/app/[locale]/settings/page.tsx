@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ import { handleApiError } from '@/lib/error-handler';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
+  const tCommon = useTranslations('common');
   const { user, refreshUser } = useAuth();
   const { goBack } = useNavigationProgress();
   const [name, setName] = useState(user?.name || '');
@@ -38,9 +41,9 @@ export default function SettingsPage() {
 
       await api.updateUserProfile(updateData);
       await refreshUser();
-      toast.success('Profile updated successfully');
+      toast.success(t('profileUpdated'));
     } catch (err) {
-      handleApiError(err, 'Failed to update profile');
+      handleApiError(err, t('updateProfileFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -51,17 +54,17 @@ export default function SettingsPage() {
     setPasswordSuccess(false);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('Please fill in all password fields');
+      setPasswordError(t('fillAllPasswordFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('newPasswordsDoNotMatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
+      setPasswordError(t('passwordTooShort'));
       return;
     }
 
@@ -73,9 +76,9 @@ export default function SettingsPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      toast.success('Password changed successfully');
+      toast.success(t('passwordChanged'));
     } catch (err) {
-      handleApiError(err, 'Failed to change password');
+      handleApiError(err, t('changePasswordFailed'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -94,91 +97,89 @@ export default function SettingsPage() {
             onClick={goBack}
             className="text-muted-foreground gap-1"
           >
-            ← Back
+            ← {tCommon('back')}
           </Button>
         </div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Settings</h1>
+        <h1 className="text-2xl font-display font-bold text-foreground">{t('title')}</h1>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Profile</h2>
+          <h2 className="text-lg font-semibold">{t('profile')}</h2>
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
-              Name
+              {t('nameLabel')}
             </label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('namePlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
-              Email
+              {t('emailLabel')}
             </label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button onClick={handleSave} disabled={isSaving || !hasChanges} className="w-full">
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('saving') : t('saveChanges')}
           </Button>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold">Change Password</h2>
+          <h2 className="text-lg font-semibold">{t('changePassword')}</h2>
           <div className="space-y-2">
             <label htmlFor="currentPassword" className="text-sm font-medium">
-              Current Password
+              {t('currentPasswordLabel')}
             </label>
             <Input
               id="currentPassword"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
+              placeholder={t('currentPasswordPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="newPassword" className="text-sm font-medium">
-              New Password
+              {t('newPasswordLabel')}
             </label>
             <Input
               id="newPassword"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
+              placeholder={t('newPasswordPlaceholder2')}
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">
-              Confirm New Password
+              {t('confirmNewPasswordLabel')}
             </label>
             <Input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
+              placeholder={t('confirmNewPasswordPlaceholder2')}
             />
           </div>
 
           {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
 
-          {passwordSuccess && (
-            <p className="text-sm text-green-600">Password changed successfully</p>
-          )}
+          {passwordSuccess && <p className="text-sm text-green-600">{t('passwordChanged')}</p>}
 
           <Button
             onClick={handleChangePassword}
@@ -186,7 +187,7 @@ export default function SettingsPage() {
             className="w-full"
             variant="outline"
           >
-            {isChangingPassword ? 'Changing...' : 'Change Password'}
+            {isChangingPassword ? t('changing') : t('changePassword')}
           </Button>
         </div>
       </div>

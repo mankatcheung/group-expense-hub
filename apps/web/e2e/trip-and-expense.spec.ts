@@ -13,7 +13,7 @@ test.describe('trip and expense journey', () => {
 
     await registerPage.goto();
     await registerPage.register(user.name, user.email, user.password);
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
 
     const tripName = `Bali Trip ${Date.now()}`;
     await homePage.createTrip(tripName);
@@ -33,7 +33,7 @@ test.describe('trip and expense journey', () => {
 
     await registerPage.goto();
     await registerPage.register(user.name, user.email, user.password);
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
 
     const tripName = `Tokyo Trip ${Date.now()}`;
     await homePage.createTrip(tripName);

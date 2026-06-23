@@ -3,21 +3,19 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane, Loader2 } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
 
-export default function RegisterPage() {
-  const [name, setName] = useState('');
+export default function LoginPage() {
+  const t = useTranslations('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const { register, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, startTransition] = useTransition();
 
@@ -28,19 +26,12 @@ export default function RegisterPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
     startTransition(async () => {
       try {
-        await register(name, email, password);
+        await login(email, password);
         router.push('/');
       } catch (err) {
-        handleApiError(err, 'Failed to register');
+        handleApiError(err, t('loginFailed'));
       }
     });
   };
@@ -52,25 +43,15 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Create an account</h2>
-          <p className="text-sm text-muted-foreground mt-2">Start splitting expenses today</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('welcomeBack')}</h2>
+          <p className="text-sm text-muted-foreground mt-2">{t('loginHint')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Input
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -80,43 +61,37 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Password"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
               required
             />
           </div>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
-          </div>
-
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
+                {t('signingIn')}
               </>
             ) : (
-              'Sign Up'
+              t('signIn')
             )}
           </Button>
         </form>
 
         <div className="text-center text-sm">
+          <Link href="/forgot-password" className="text-muted-foreground hover:text-primary">
+            {t('forgotPassword')}
+          </Link>
+        </div>
+
+        <div className="text-center text-sm">
           <p className="text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium text-primary hover:underline">
-              Sign in
+            {t('noAccount')}{' '}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              {t('signUp')}
             </Link>
           </p>
         </div>

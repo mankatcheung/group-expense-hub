@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { api, TripInvitation } from '@/services/api';
 import { useTrip } from '@/context/TripContext';
 import { handleApiError } from '@/lib/error-handler';
@@ -11,6 +13,7 @@ import { handleApiError } from '@/lib/error-handler';
  * the trip-list rendering concern in app/page.tsx.
  */
 export function useInvitations() {
+  const t = useTranslations('home');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshTrips } = useTrip();
@@ -26,11 +29,11 @@ export function useInvitations() {
       const data = await api.getInvitations();
       setInvitations(data);
     } catch (err) {
-      handleApiError(err, 'Failed to load invitations');
+      handleApiError(err, t('loadInvitationsFailed'));
     } finally {
       setLoadingInvitations(false);
     }
-  }, []);
+  }, [t]);
 
   const handleJoinByToken = useCallback(
     async (token: string) => {
@@ -40,11 +43,11 @@ export function useInvitations() {
         refreshTrips();
         router.push(`/trip/${result.tripId}`);
       } catch (err) {
-        handleApiError(err, 'Failed to join trip');
+        handleApiError(err, t('joinTripFailed'));
         setIsJoiningTrip(false);
       }
     },
-    [refreshTrips, router]
+    [refreshTrips, router, t]
   );
 
   const handleAccept = useCallback(
@@ -56,12 +59,12 @@ export function useInvitations() {
         setInvitations((prev) => prev.filter((inv) => inv.id !== id));
         router.push(`/trip/${result.tripId}`);
       } catch (err) {
-        handleApiError(err, 'Failed to accept invitation');
+        handleApiError(err, t('acceptInvitationFailed'));
       } finally {
         setAcceptingId(null);
       }
     },
-    [refreshTrips, router]
+    [refreshTrips, router, t]
   );
 
   useEffect(() => {
