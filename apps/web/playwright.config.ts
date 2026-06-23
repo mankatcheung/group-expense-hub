@@ -63,7 +63,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm --filter api exec tsx watch src/index.ts',
+      // `generate` is chained directly into the start command (not left to
+      // globalSetup alone) so the server process never starts before
+      // @prisma/client is populated - globalSetup runs in a separate
+      // process from this spawned one, and relying purely on cross-process
+      // ordering proved to be a real race on a clean/cold CI install (see
+      // PR discussion).
+      command:
+        'pnpm --filter @group-expense-hub/db generate && pnpm --filter api exec tsx watch src/index.ts',
       url: `${TEST_API_URL}/health`,
       cwd: repoRoot,
       env: sharedTestEnv,
