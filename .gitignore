@@ -51,3 +51,6 @@ next-env.d.ts
 # Local SQLite dev databases (regenerated via migrations/db:push)
 *.db
 *.db-journal
+
+# Vitest coverage reports
+coverage/
