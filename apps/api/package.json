@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
