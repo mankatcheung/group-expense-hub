@@ -62,8 +62,20 @@ export class InMemoryRateLimiter {
 
 const WINDOW_MS = 60_000;
 
+// Overridable only for e2e test runs (apps/web/playwright.config.ts sets
+// AUTH_RATE_LIMIT_MAX on the api process it starts) - a single browser-driven
+// test journey legitimately makes far more real /api/auth/* calls (sign-up,
+// repeated get-session polls on every navigation, sign-out, sign-in) than a
+// human would in the same window, so the production default would otherwise
+// make the suite flake on its own auth traffic rather than catching real
+// bugs. Unset in every real environment, so production behavior is
+// unchanged.
+const authRateLimitMax = process.env.AUTH_RATE_LIMIT_MAX
+  ? parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10)
+  : 20;
+
 export const rateLimit = {
-  auth: new InMemoryRateLimiter(20, WINDOW_MS),
+  auth: new InMemoryRateLimiter(authRateLimitMax, WINDOW_MS),
   api: new InMemoryRateLimiter(100, WINDOW_MS),
   email: new InMemoryRateLimiter(5, WINDOW_MS),
 };
