@@ -5,11 +5,15 @@ export const dynamic = 'force-dynamic';
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
+import { api } from '@/services/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plane, Loader2 } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
+
+const emailSchema = z.string().email();
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -17,6 +21,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailTaken, setEmailTaken] = useState(false);
   const { register, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, startTransition] = useTransition();
@@ -25,6 +30,21 @@ export default function RegisterPage() {
     router.replace('/');
     return null;
   }
+
+  const handleEmailBlur = async () => {
+    setEmailTaken(false);
+    // Only a fast, non-blocking hint - skip on partial/invalid input rather
+    // than firing a request that'll just 400.
+    if (!emailSchema.safeParse(email).success) return;
+
+    try {
+      const { available } = await api.checkEmailAvailable(email);
+      setEmailTaken(!available);
+    } catch {
+      // Purely informational; if the check itself fails, say nothing and
+      // let the real sign-up call be the source of truth as usual.
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +92,17 @@ export default function RegisterPage() {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailTaken(false);
+              }}
+              onBlur={handleEmailBlur}
               disabled={isSubmitting}
               required
             />
+            {emailTaken && (
+              <p className="text-xs text-destructive">This email is already registered.</p>
+            )}
           </div>
           <div className="space-y-2">
             <Input

@@ -6,6 +6,7 @@ import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { sendPasswordResetEmail } from './services/email.js';
 import { SESSION } from '@group-expense-hub/db/constants';
 import { getTrustedOrigins } from './lib/trusted-origins.js';
+import { emailBloomFilter } from './plugins/email-bloom-filter.js';
 
 const dbUrl = process.env.TURSO_DATABASE_URL || 'file:./dev.db';
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -63,6 +64,18 @@ export const auth: any = betterAuth({
     },
   },
   trustedOrigins: getTrustedOrigins(),
+  databaseHooks: {
+    user: {
+      create: {
+        // Keeps the email Bloom filter (used by GET /api/check-email) in
+        // sync with every real signup, regardless of which code path
+        // created the user.
+        after: async (user) => {
+          emailBloomFilter.add(user.email);
+        },
+      },
+    },
+  },
 });
 
 export { prisma };

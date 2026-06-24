@@ -2,13 +2,15 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
-import { auth } from './auth.js';
+import { auth, prisma } from './auth.js';
 import tripsRouter from './routes/trips.js';
 import membersRouter from './routes/members.js';
 import expensesRouter from './routes/expenses.js';
 import invitationsRouter from './routes/invitations.js';
 import userRouter from './routes/user.js';
+import checkEmailRouter from './routes/check-email.js';
 import { rateLimit } from './plugins/ratelimit.js';
+import { seedEmailBloomFilter } from './plugins/email-bloom-filter.js';
 import { getTrustedOrigins } from './lib/trusted-origins.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -20,6 +22,10 @@ const isDev = process.env.NODE_ENV !== 'production';
  * instead of listen().
  */
 export async function buildApp(): Promise<FastifyInstance> {
+  // Must finish before any request can be served, so /api/check-email never
+  // sees a filter that's missing existing users.
+  await seedEmailBloomFilter(prisma);
+
   const fastify = Fastify({
     logger: isDev
       ? {
@@ -166,6 +172,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(expensesRouter, { prefix: '/api/trips' });
   await fastify.register(invitationsRouter, { prefix: '/api/invitations' });
   await fastify.register(userRouter, { prefix: '/api/user' });
+  await fastify.register(checkEmailRouter, { prefix: '/api' });
 
   return fastify;
 }
