@@ -199,4 +199,8 @@ export const api = {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   },
+
+  checkEmailAvailable: async (email: string): Promise<{ available: boolean }> => {
+    return fetchApi<{ available: boolean }>(`/api/check-email?email=${encodeURIComponent(email)}`);
+  },
 };

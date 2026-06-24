@@ -57,7 +57,8 @@
     "newPasswordPlaceholder": "新密碼",
     "confirmNewPasswordPlaceholder": "確認新密碼",
     "resetting": "重設中...",
-    "resetPasswordButton": "重設密碼"
+    "resetPasswordButton": "重設密碼",
+    "emailTaken": "此電郵地址已被註冊。"
   },
   "settings": {
     "profileUpdated": "個人資料已成功更新",

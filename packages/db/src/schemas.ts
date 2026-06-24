@@ -162,3 +162,7 @@ export const UpdateProfileRequestSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
 });
+
+export const CheckEmailRequestSchema = z.object({
+  email: z.string().email(),
+});

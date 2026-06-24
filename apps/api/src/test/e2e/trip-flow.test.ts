@@ -106,6 +106,29 @@ describe('trip flow e2e', () => {
     });
   });
 
+  it('reports a never-registered email as available', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/check-email?email=never-registered-${randomUUID()}@example.com`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ available: true });
+  });
+
+  it('reports a just-registered email as unavailable, proving the databaseHooks wiring fires against the real app', async () => {
+    const email = `taken-${randomUUID()}@example.com`;
+    await signUp(app, email, 'Taken');
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/check-email?email=${encodeURIComponent(email)}`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ available: false });
+  });
+
   it('denies a different user access to someone else’s trip', async () => {
     const owner = await signUp(app, `owner-${randomUUID()}@example.com`, 'Owner');
     const stranger = await signUp(app, `stranger-${randomUUID()}@example.com`, 'Stranger');

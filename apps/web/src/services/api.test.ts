@@ -249,5 +249,16 @@ describe('api', () => {
         })
       );
     });
+
+    it('checkEmailAvailable GETs with the email URL-encoded as a query param', async () => {
+      mockOk({ available: true });
+
+      await api.checkEmailAvailable('a+test@example.com');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/check-email?email=a%2Btest%40example.com',
+        expect.objectContaining({})
+      );
+    });
   });
 });

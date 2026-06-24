@@ -2,13 +2,15 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
-import { auth } from './auth.js';
+import { auth, prisma } from './auth.js';
 import tripsRouter from './routes/trips.js';
 import membersRouter from './routes/members.js';
 import expensesRouter from './routes/expenses.js';
 import invitationsRouter from './routes/invitations.js';
 import userRouter from './routes/user.js';
+import checkEmailRouter from './routes/check-email.js';
 import { rateLimit } from './plugins/ratelimit.js';
+import { seedEmailBloomFilter } from './plugins/email-bloom-filter.js';
 import { getTrustedOrigins } from './lib/trusted-origins.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -101,6 +103,16 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   fastify.get('/health', async () => ({ status: 'ok' }));
 
+  // Best-effort: a failure here (e.g. the DB not being reachable yet during
+  // startup) should never take down the whole server for what's just a
+  // non-critical UX optimization - /api/check-email's route handler already
+  // falls back to a real DB query whenever the filter hasn't seen an email.
+  try {
+    await seedEmailBloomFilter(prisma);
+  } catch (error) {
+    fastify.log.warn({ err: error }, 'Failed to seed email bloom filter, continuing without it');
+  }
+
   await fastify.register(async function (fastify) {
     fastify.all('/api/auth/*', async (request, reply) => {
       const rateLimitResult = await rateLimit.auth.limit(request.ip);
@@ -166,6 +178,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(expensesRouter, { prefix: '/api/trips' });
   await fastify.register(invitationsRouter, { prefix: '/api/invitations' });
   await fastify.register(userRouter, { prefix: '/api/user' });
+  await fastify.register(checkEmailRouter, { prefix: '/api' });
 
   return fastify;
 }

@@ -57,7 +57,8 @@
     "newPasswordPlaceholder": "New Password",
     "confirmNewPasswordPlaceholder": "Confirm New Password",
     "resetting": "Resetting...",
-    "resetPasswordButton": "Reset Password"
+    "resetPasswordButton": "Reset Password",
+    "emailTaken": "This email is already registered."
   },
   "settings": {
     "profileUpdated": "Profile updated successfully",
