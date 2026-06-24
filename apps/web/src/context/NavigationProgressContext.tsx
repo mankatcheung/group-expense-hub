@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useTransition, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 
 interface NavigationProgressContextType {
   isPending: boolean;

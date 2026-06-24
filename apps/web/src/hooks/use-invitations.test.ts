@@ -1,14 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useInvitations } from './use-invitations.js';
 import { useTrip } from '@/context/TripContext';
 import { api } from '@/services/api';
 import { handleApiError } from '@/lib/error-handler';
 
+const HOME_MESSAGES: Record<string, string> = {
+  loadInvitationsFailed: 'Failed to load invitations',
+  joinTripFailed: 'Failed to join trip',
+  acceptInvitationFailed: 'Failed to accept invitation',
+};
+
 vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(),
   useSearchParams: vi.fn(),
+}));
+
+vi.mock('@/i18n/navigation', () => ({
+  useRouter: vi.fn(),
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => HOME_MESSAGES[key] ?? key,
 }));
 
 vi.mock('@/context/TripContext', () => ({

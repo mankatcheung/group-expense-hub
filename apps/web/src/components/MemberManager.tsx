@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Member } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Props) {
+  const t = useTranslations('trip');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
     const trimmed = name.trim();
     if (!trimmed) return;
     if (isNameTaken(trimmed)) {
-      setError('A member with this name already exists');
+      setError(t('nameAlreadyExists'));
       return;
     }
     setError('');
@@ -125,7 +127,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
       return;
     }
     if (isNameTaken(trimmed, memberId)) {
-      setEditError('A member with this name already exists');
+      setEditError(t('nameAlreadyExists'));
       return;
     }
     setEditError('');
@@ -150,11 +152,11 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-display font-semibold text-foreground">Trip Members</h2>
+      <h2 className="text-lg font-display font-semibold text-foreground">{t('tripMembers')}</h2>
       <div className="space-y-1">
         <div className="flex gap-2">
           <Input
-            placeholder="Add a friend..."
+            placeholder={t('addFriendPlaceholder')}
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -162,9 +164,14 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
             }}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             className="flex-1"
-            aria-label="Member name"
+            aria-label={t('memberNameAriaLabel')}
           />
-          <Button onClick={handleAdd} size="icon" className="shrink-0" aria-label="Add member">
+          <Button
+            onClick={handleAdd}
+            size="icon"
+            className="shrink-0"
+            aria-label={t('addMemberAriaLabel')}
+          >
             <UserPlus className="h-4 w-4" />
           </Button>
         </div>
@@ -222,7 +229,7 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
           </span>
         ))}
         {members.length === 0 && (
-          <p className="text-sm text-muted-foreground">Add members to start splitting bills</p>
+          <p className="text-sm text-muted-foreground">{t('addMembersHint')}</p>
         )}
       </div>
 
@@ -231,28 +238,29 @@ export default function MemberManager({ members, onAdd, onUpdate, onRemove }: Pr
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Remove {memberToRemove?.name}?
+              {t('removeMemberTitle', { name: memberToRemove?.name ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {memberToRemove?.hasExpenses ? (
                 <span>
-                  This member is involved in <strong>{memberToRemove.expenseCount}</strong>{' '}
-                  expense(s). Removing them will also delete these expenses. This action cannot be
-                  undone.
+                  {t.rich('removeMemberWithExpensesWarning', {
+                    count: memberToRemove.expenseCount,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </span>
               ) : (
-                <span>Are you sure you want to remove this member from the trip?</span>
+                <span>{t('removeMemberConfirm')}</span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelRemove}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelRemove}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmRemove}
               disabled={isRemoving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isRemoving ? 'Removing...' : 'Remove Member'}
+              {isRemoving ? t('removing') : t('removeMember')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

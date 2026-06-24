@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Member, Expense } from '@/lib/types';
 import { CURRENCIES } from '@/lib/currencies';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Receipt, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { enUS, zhHK } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -24,6 +26,9 @@ interface Props {
 }
 
 export default function AddExpense({ members, onAdd }: Props) {
+  const t = useTranslations('expense');
+  const locale = useLocale();
+  const dateLocale = locale === 'zh-HK' ? zhHK : enUS;
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -60,22 +65,20 @@ export default function AddExpense({ members, onAdd }: Props) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 text-center">
         <Receipt className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground text-sm">
-          Add at least 2 members to start adding expenses
-        </p>
+        <p className="text-muted-foreground text-sm">{t('notEnoughMembersHint')}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-display font-semibold text-foreground">Add Expense</h2>
+      <h2 className="text-lg font-display font-semibold text-foreground">{t('addExpense')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
-          placeholder="What was it for?"
+          placeholder={t('descriptionPlaceholder')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          aria-label="Expense description"
+          aria-label={t('descriptionAriaLabel')}
         />
         <div className="flex gap-2">
           <Input
@@ -86,10 +89,10 @@ export default function AddExpense({ members, onAdd }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="flex-1"
-            aria-label="Expense amount"
+            aria-label={t('amountAriaLabel')}
           />
           <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger className="w-24" aria-label="Select currency">
+            <SelectTrigger className="w-24" aria-label={t('selectCurrencyAriaLabel')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -104,7 +107,7 @@ export default function AddExpense({ members, onAdd }: Props) {
       </div>
 
       <div>
-        <Label className="text-sm text-muted-foreground mb-2 block">Date</Label>
+        <Label className="text-sm text-muted-foreground mb-2 block">{t('dateLabel')}</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -113,10 +116,10 @@ export default function AddExpense({ members, onAdd }: Props) {
                 'w-full justify-start text-left font-normal',
                 !date && 'text-muted-foreground'
               )}
-              aria-label="Select expense date"
+              aria-label={t('selectDateAriaLabel')}
             >
               <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-              {format(date, 'PPP')}
+              {format(date, 'PPP', { locale: dateLocale })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -132,10 +135,10 @@ export default function AddExpense({ members, onAdd }: Props) {
       </div>
 
       <div>
-        <Label className="text-sm text-muted-foreground mb-2 block">Paid by</Label>
+        <Label className="text-sm text-muted-foreground mb-2 block">{t('paidByLabel')}</Label>
         <Select value={paidBy} onValueChange={setPaidBy}>
-          <SelectTrigger aria-label="Select who paid">
-            <SelectValue placeholder="Who paid?" />
+          <SelectTrigger aria-label={t('selectWhoPaidAriaLabel')}>
+            <SelectValue placeholder={t('whoPaidPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {members.map((m) => (
@@ -155,9 +158,9 @@ export default function AddExpense({ members, onAdd }: Props) {
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <Label className="text-sm text-muted-foreground">Split among</Label>
+          <Label className="text-sm text-muted-foreground">{t('splitAmongLabel')}</Label>
           <button onClick={selectAll} className="text-xs text-primary hover:underline font-medium">
-            Select all
+            {t('selectAll')}
           </button>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -179,7 +182,7 @@ export default function AddExpense({ members, onAdd }: Props) {
 
       <Button onClick={handleSubmit} className="w-full">
         <Receipt className="h-4 w-4 mr-2" />
-        Add Expense
+        {t('addExpense')}
       </Button>
     </div>
   );

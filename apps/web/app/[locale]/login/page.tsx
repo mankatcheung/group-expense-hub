@@ -3,8 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Plane, Loader2 } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
 
 export default function LoginPage() {
+  const t = useTranslations('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -30,7 +31,7 @@ export default function LoginPage() {
         await login(email, password);
         router.push('/');
       } catch (err) {
-        handleApiError(err, 'Failed to login');
+        handleApiError(err, t('loginFailed'));
       }
     });
   };
@@ -42,17 +43,15 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Enter your credentials to access your trips
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('welcomeBack')}</h2>
+          <p className="text-sm text-muted-foreground mt-2">{t('loginHint')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -62,7 +61,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Password"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
@@ -74,25 +73,25 @@ export default function LoginPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
+                {t('signingIn')}
               </>
             ) : (
-              'Sign In'
+              t('signIn')
             )}
           </Button>
         </form>
 
         <div className="text-center text-sm">
           <Link href="/forgot-password" className="text-muted-foreground hover:text-primary">
-            Forgot password?
+            {t('forgotPassword')}
           </Link>
         </div>
 
         <div className="text-center text-sm">
           <p className="text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('noAccount')}{' '}
             <Link href="/register" className="font-medium text-primary hover:underline">
-              Sign up
+              {t('signUp')}
             </Link>
           </p>
         </div>

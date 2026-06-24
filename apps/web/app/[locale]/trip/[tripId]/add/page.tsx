@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useTripDetail } from '@/hooks/use-trip-detail';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
 import AddExpense from '@/components/AddExpense';
@@ -12,6 +13,7 @@ import { Plane, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AddExpensePage() {
+  const t = useTranslations('trip');
   const params = useParams();
   const { navigate } = useNavigationProgress();
   const tripId = params.tripId as string;
@@ -42,14 +44,16 @@ export default function AddExpensePage() {
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
           <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
-            <p className="text-destructive text-sm font-medium mb-1">Failed to load trip data</p>
+            <p className="text-destructive text-sm font-medium mb-1">
+              {t('failedToLoadTripData')}
+            </p>
             <p className="text-muted-foreground text-xs mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
               <Button variant="outline" size="sm" onClick={refreshTrip}>
-                Try Again
+                {t('tryAgain')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => navigate('/')}>
-                Go Home
+                {t('goHome')}
               </Button>
             </div>
           </div>
@@ -62,9 +66,9 @@ export default function AddExpensePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Trip not found</p>
+          <p className="text-muted-foreground mb-4">{t('tripNotFound')}</p>
           <Button variant="outline" onClick={() => navigate('/')}>
-            Go Home
+            {t('goHome')}
           </Button>
         </div>
       </div>
@@ -82,7 +86,7 @@ export default function AddExpensePage() {
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight">
             {trip.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Add members and log expenses</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('addMembersAndLogHint')}</p>
         </div>
 
         <div className="space-y-6">

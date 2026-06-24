@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTripDetail } from '@/hooks/use-trip-detail';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
@@ -20,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function TripDetailContent() {
+  const t = useTranslations('trip');
   const params = useParams();
   const router = useRouter();
   const { navigate } = useNavigationProgress();
@@ -85,14 +87,14 @@ function TripDetailContent() {
         <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
           <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
-            <p className="text-destructive text-sm font-medium mb-1">Failed to load trip</p>
+            <p className="text-destructive text-sm font-medium mb-1">{t('failedToLoadTrip')}</p>
             <p className="text-muted-foreground text-xs mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
               <Button variant="outline" size="sm" onClick={refreshTrip}>
-                Try Again
+                {t('tryAgain')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => navigate('/')}>
-                Go Home
+                {t('goHome')}
               </Button>
             </div>
           </div>
@@ -105,9 +107,9 @@ function TripDetailContent() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Trip not found</p>
+          <p className="text-muted-foreground mb-4">{t('tripNotFound')}</p>
           <Button variant="outline" onClick={() => navigate('/')}>
-            Go Home
+            {t('goHome')}
           </Button>
         </div>
       </div>
@@ -132,7 +134,7 @@ function TripDetailContent() {
             className="gap-2 text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            All Trips
+            {t('allTrips')}
           </Button>
         </div>
 
@@ -155,28 +157,29 @@ function TripDetailContent() {
             <h1
               className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
               onClick={handleStartEditName}
-              title="Click to edit"
+              title={t('clickToEdit')}
             >
               {trip.name}
             </h1>
           )}
           <p className="mt-1 text-sm text-muted-foreground">
-            {trip.members.length} member{trip.members.length !== 1 ? 's' : ''} ·{' '}
-            {trip.expenses?.length} expense
-            {trip.expenses?.length !== 1 ? 's' : ''}
+            {t('memberExpenseSummary', {
+              memberCount: trip.members.length,
+              expenseCount: trip.expenses?.length ?? 0,
+            })}
           </p>
         </div>
 
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="w-full">
             <TabsTrigger value="summary" className="flex-1">
-              Summary
+              {t('summaryTab')}
             </TabsTrigger>
             <TabsTrigger value="members" className="flex-1">
-              Members
+              {t('membersTab')}
             </TabsTrigger>
             <TabsTrigger value="expenses" className="flex-1">
-              Expenses
+              {t('expensesTab')}
             </TabsTrigger>
           </TabsList>
 
@@ -186,7 +189,7 @@ function TripDetailContent() {
                 <BalanceSummary balances={balances} members={trip.members} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No expenses yet. Add members and expenses to see the summary.
+                  {t('noExpensesHint')}
                 </p>
               )}
             </div>
@@ -197,12 +200,12 @@ function TripDetailContent() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Collaborators
+                  {t('collaborators')}
                 </h3>
                 {trip.isOwner && (
                   <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Invite
+                    {t('invite')}
                   </Button>
                 )}
               </div>
@@ -218,7 +221,7 @@ function TripDetailContent() {
                   <p className="text-sm font-medium truncate">
                     {trip.owner?.name || trip.owner?.email}
                   </p>
-                  <p className="text-xs text-muted-foreground">Owner</p>
+                  <p className="text-xs text-muted-foreground">{t('owner')}</p>
                 </div>
                 <Crown className="h-4 w-4 text-yellow-500" />
               </div>
@@ -236,7 +239,7 @@ function TripDetailContent() {
                       <p className="text-sm font-medium truncate">
                         {member.user.name || member.user.email}
                       </p>
-                      <p className="text-xs text-muted-foreground">Collaborator</p>
+                      <p className="text-xs text-muted-foreground">{t('collaborator')}</p>
                     </div>
                     {trip.isOwner && (
                       <Button
@@ -252,9 +255,7 @@ function TripDetailContent() {
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-2">
-                  {trip.isOwner
-                    ? 'No collaborators yet. Invite others to join!'
-                    : 'No collaborators on this trip.'}
+                  {trip.isOwner ? t('noCollaboratorsOwnerHint') : t('noCollaboratorsHint')}
                 </p>
               )}
             </div>
@@ -273,7 +274,7 @@ function TripDetailContent() {
           <TabsContent value="expenses" className="space-y-4">
             <Button onClick={() => navigate(`/trip/${trip.id}/add`)} className="w-full gap-2">
               <Plus className="h-4 w-4" />
-              Add Expense
+              {t('addExpense')}
             </Button>
             <ExpenseList
               expenses={trip.expenses}
@@ -291,9 +292,10 @@ function TripDetailContent() {
 }
 
 export default function TripDetailPage() {
+  const t = useTranslations('common');
   return (
     <Suspense
-      fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}
+      fallback={<div className="min-h-screen flex items-center justify-center">{t('loading')}</div>}
     >
       <TripDetailContent />
     </Suspense>

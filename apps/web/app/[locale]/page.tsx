@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import { useTrip } from '@/context/TripContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
@@ -26,6 +27,7 @@ import {
 import { getCurrencySymbol } from '@/lib/currencies';
 
 function IndexContent() {
+  const t = useTranslations('home');
   const { trips, isLoading, error, createTrip, deleteTrip, refreshTrips } = useTrip();
   const router = useRouter();
   const { navigate } = useNavigationProgress();
@@ -54,7 +56,7 @@ function IndexContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Joining trip...</p>
+        <p className="text-sm text-muted-foreground">{t('joiningTrip')}</p>
       </div>
     );
   }
@@ -71,16 +73,16 @@ function IndexContent() {
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground tracking-tight">
             SplitTrip
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Split expenses with friends, no awkward math needed
-          </p>
+          <p className="mt-2 text-muted-foreground">{t('tagline')}</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
-          <h2 className="text-lg font-display font-semibold text-foreground mb-3">New Trip</h2>
+          <h2 className="text-lg font-display font-semibold text-foreground mb-3">
+            {t('newTrip')}
+          </h2>
           <div className="flex gap-2">
             <Input
-              placeholder="e.g. Bali 2026, Road Trip..."
+              placeholder={t('tripNamePlaceholder')}
               value={tripName}
               onChange={(e) => setTripName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
@@ -88,7 +90,7 @@ function IndexContent() {
             />
             <Button onClick={handleCreate} className="gap-2 shrink-0">
               <Plus className="h-4 w-4" />
-              Create
+              {t('create')}
             </Button>
           </div>
         </div>
@@ -96,10 +98,10 @@ function IndexContent() {
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="w-full">
             <TabsTrigger value="trips" className="flex-1">
-              Trips
+              {t('tripsTab')}
             </TabsTrigger>
             <TabsTrigger value="invitations" className="flex-1">
-              Invitations
+              {t('invitationsTab')}
               {invitations.length > 0 && (
                 <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
                   {invitations.length}
@@ -118,10 +120,12 @@ function IndexContent() {
             ) : error ? (
               <div className="rounded-2xl border border-destructive/50 bg-destructive/5 p-8 text-center">
                 <AlertCircle className="mx-auto h-10 w-10 text-destructive/60 mb-3" />
-                <p className="text-destructive text-sm font-medium mb-1">Failed to load trips</p>
+                <p className="text-destructive text-sm font-medium mb-1">
+                  {t('failedToLoadTrips')}
+                </p>
                 <p className="text-muted-foreground text-xs mb-4">{error}</p>
                 <Button variant="outline" size="sm" onClick={refreshTrips}>
-                  Try Again
+                  {t('tryAgain')}
                 </Button>
               </div>
             ) : trips.length > 0 ? (
@@ -141,8 +145,10 @@ function IndexContent() {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{trip.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {trip.memberCount} member{trip.memberCount !== 1 ? 's' : ''} ·{' '}
-                          {trip.expenseCount} expense{trip.expenseCount !== 1 ? 's' : ''}
+                          {t('memberExpenseSummary', {
+                            memberCount: trip.memberCount,
+                            expenseCount: trip.expenseCount,
+                          })}
                           {totals.length > 0 && (
                             <span>
                               {' '}
@@ -173,9 +179,7 @@ function IndexContent() {
             ) : (
               <div className="rounded-2xl border border-border bg-card p-8 text-center">
                 <MapPin className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-                <p className="text-muted-foreground text-sm">
-                  Create your first trip to get started
-                </p>
+                <p className="text-muted-foreground text-sm">{t('createFirstTripHint')}</p>
               </div>
             )}
           </TabsContent>
@@ -200,7 +204,9 @@ function IndexContent() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{inv.tripName}</p>
                       <p className="text-xs text-muted-foreground">
-                        Invited by {inv.inviter?.name || inv.inviter?.email || 'Unknown'}
+                        {t('invitedBy', {
+                          name: inv.inviter?.name || inv.inviter?.email || t('unknownInviter'),
+                        })}
                       </p>
                     </div>
                     <Button
@@ -214,7 +220,7 @@ function IndexContent() {
                       ) : (
                         <Check className="h-3 w-3" />
                       )}
-                      Accept
+                      {t('accept')}
                     </Button>
                   </div>
                 ))}
@@ -222,7 +228,7 @@ function IndexContent() {
             ) : (
               <div className="rounded-2xl border border-border bg-card p-8 text-center">
                 <Mail className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-                <p className="text-muted-foreground text-sm">No pending invitations</p>
+                <p className="text-muted-foreground text-sm">{t('noPendingInvitations')}</p>
               </div>
             )}
           </TabsContent>
@@ -233,9 +239,10 @@ function IndexContent() {
 }
 
 export default function Home() {
+  const t = useTranslations('common');
   return (
     <Suspense
-      fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}
+      fallback={<div className="min-h-screen flex items-center justify-center">{t('loading')}</div>}
     >
       <IndexContent />
     </Suspense>

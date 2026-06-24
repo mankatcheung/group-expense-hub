@@ -12,7 +12,7 @@ test.describe('authentication', () => {
     await registerPage.goto();
     await registerPage.register(user.name, user.email, user.password);
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
     await expect(page.getByText(`Hello, ${user.name}`)).toBeVisible();
   });
 
@@ -24,14 +24,14 @@ test.describe('authentication', () => {
 
     await registerPage.goto();
     await registerPage.register(user.name, user.email, user.password);
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
 
     await header.logout();
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/en/login');
 
     await loginPage.login(user.email, user.password);
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
     await expect(page.getByText(`Hello, ${user.name}`)).toBeVisible();
   });
 
@@ -46,13 +46,13 @@ test.describe('authentication', () => {
     // rather than a "no such user" error.
     await registerPage.goto();
     await registerPage.register(user.name, user.email, user.password);
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/en');
     await header.logout();
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/en/login');
 
     await loginPage.login(user.email, 'definitely-the-wrong-password');
 
     await expect(page.getByText('Failed to login')).toBeVisible();
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/en/login');
   });
 });

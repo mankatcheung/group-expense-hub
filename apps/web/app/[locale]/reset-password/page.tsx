@@ -3,8 +3,9 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { authClient } from '@/lib/auth-client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Plane } from 'lucide-react';
 import { handleApiError } from '@/lib/error-handler';
 
 function ResetPasswordContent() {
+  const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -26,12 +28,12 @@ function ResetPasswordContent() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
     if (!token) {
-      setError('Invalid reset token');
+      setError(t('invalidResetToken'));
       return;
     }
 
@@ -44,14 +46,14 @@ function ResetPasswordContent() {
       });
 
       if (authError) {
-        setError(authError.message || 'Failed to reset password');
+        setError(authError.message || t('resetPasswordFailed'));
         return;
       }
 
       setSuccess(true);
       setTimeout(() => router.push('/login'), 3000);
     } catch (err) {
-      handleApiError(err, 'Failed to reset password');
+      handleApiError(err, t('resetPasswordFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,15 +67,13 @@ function ResetPasswordContent() {
             <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
               <Plane className="h-7 w-7" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Invalid Link</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              This password reset link is invalid or has expired.
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">{t('invalidLink')}</h2>
+            <p className="text-sm text-muted-foreground mt-2">{t('invalidLinkHint')}</p>
           </div>
 
           <div className="text-center text-sm">
             <Link href="/forgot-password" className="font-medium text-primary hover:underline">
-              Request a new reset link
+              {t('requestNewLink')}
             </Link>
           </div>
         </div>
@@ -89,15 +89,13 @@ function ResetPasswordContent() {
             <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
               <Plane className="h-7 w-7" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Password Reset</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Your password has been reset. Redirecting to login...
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">{t('passwordResetHeading')}</h2>
+            <p className="text-sm text-muted-foreground mt-2">{t('passwordResetSuccessHint')}</p>
           </div>
 
           <div className="text-center text-sm">
             <Link href="/login" className="font-medium text-primary hover:underline">
-              Go to sign in
+              {t('goToSignIn')}
             </Link>
           </div>
         </div>
@@ -112,15 +110,15 @@ function ResetPasswordContent() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Reset your password</h2>
-          <p className="text-sm text-muted-foreground mt-2">Enter your new password below</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('resetPasswordHeading')}</h2>
+          <p className="text-sm text-muted-foreground mt-2">{t('newPasswordHint')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="New Password"
+              placeholder={t('newPasswordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -129,7 +127,7 @@ function ResetPasswordContent() {
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Confirm New Password"
+              placeholder={t('confirmNewPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -139,7 +137,7 @@ function ResetPasswordContent() {
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Resetting...' : 'Reset Password'}
+            {loading ? t('resetting') : t('resetPasswordButton')}
           </Button>
         </form>
       </div>
@@ -148,9 +146,10 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+  const t = useTranslations('common');
   return (
     <Suspense
-      fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}
+      fallback={<div className="min-h-screen flex items-center justify-center">{t('loading')}</div>}
     >
       <ResetPasswordContent />
     </Suspense>

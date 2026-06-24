@@ -3,8 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
@@ -16,6 +16,7 @@ import { handleApiError } from '@/lib/error-handler';
 const emailSchema = z.string().email();
 
 export default function RegisterPage() {
+  const t = useTranslations('auth');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,7 +52,7 @@ export default function RegisterPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
@@ -60,7 +61,7 @@ export default function RegisterPage() {
         await register(name, email, password);
         router.push('/');
       } catch (err) {
-        handleApiError(err, 'Failed to register');
+        handleApiError(err, t('registerFailed'));
       }
     });
   };
@@ -72,15 +73,15 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
             <Plane className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Create an account</h2>
-          <p className="text-sm text-muted-foreground mt-2">Start splitting expenses today</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('createAccount')}</h2>
+          <p className="text-sm text-muted-foreground mt-2">{t('registerHint')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
               type="text"
-              placeholder="Full Name"
+              placeholder={t('fullNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isSubmitting}
@@ -90,7 +91,7 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <Input
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -100,14 +101,12 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               required
             />
-            {emailTaken && (
-              <p className="text-xs text-destructive">This email is already registered.</p>
-            )}
+            {emailTaken && <p className="text-xs text-destructive">{t('emailTaken')}</p>}
           </div>
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Password"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
@@ -117,7 +116,7 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <Input
               type="password"
-              placeholder="Confirm Password"
+              placeholder={t('confirmPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={isSubmitting}
@@ -131,19 +130,19 @@ export default function RegisterPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
+                {t('creatingAccount')}
               </>
             ) : (
-              'Sign Up'
+              t('signUp')
             )}
           </Button>
         </form>
 
         <div className="text-center text-sm">
           <p className="text-muted-foreground">
-            Already have an account?{' '}
+            {t('haveAccount')}{' '}
             <Link href="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              {t('signInLink')}
             </Link>
           </p>
         </div>

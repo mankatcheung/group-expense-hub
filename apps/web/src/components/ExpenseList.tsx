@@ -1,9 +1,11 @@
 import { useMemo, useState, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useTranslations, useLocale } from 'next-intl';
 import { Expense, Member } from '@/lib/types';
 import { getCurrencySymbol } from '@/lib/currencies';
 import { Trash2, Pencil, List, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { enUS, zhHK } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import EditExpenseDialog from '@/components/EditExpenseDialog';
@@ -18,6 +20,9 @@ interface Props {
 type ViewMode = 'date' | 'list';
 
 export default function ExpenseList({ expenses, members, onRemove, onUpdate }: Props) {
+  const t = useTranslations('expense');
+  const locale = useLocale();
+  const dateLocale = locale === 'zh-HK' ? zhHK : enUS;
   const getMember = (id: string) => members.find((m) => m.id === id);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('date');
@@ -84,8 +89,11 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{e.description}</p>
           <p className="text-xs text-muted-foreground">
-            <span style={{ color: payer?.color }}>{payer?.name}</span> paid · split{' '}
-            {e.splitAmong.length} way{e.splitAmong.length > 1 ? 's' : ''}
+            {t.rich('paidBySplit', {
+              payerName: payer?.name ?? '',
+              name: (chunks) => <span style={{ color: payer?.color }}>{chunks}</span>,
+              count: e.splitAmong.length,
+            })}
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -93,19 +101,21 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
             {getCurrencySymbol(e.currency)}
             {e.amount.toFixed(2)}
           </p>
-          <p className="text-xs text-muted-foreground">{format(parseISO(e.date), 'MMM d')}</p>
+          <p className="text-xs text-muted-foreground">
+            {format(parseISO(e.date), 'MMM d', { locale: dateLocale })}
+          </p>
         </div>
         <button
           onClick={() => setEditingExpense(e)}
           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1 rounded"
-          aria-label={`Edit expense: ${e.description}`}
+          aria-label={t('editExpenseAriaLabel', { description: e.description })}
         >
           <Pencil className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => onRemove(e.id)}
           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 rounded"
-          aria-label={`Delete expense: ${e.description}`}
+          aria-label={t('deleteExpenseAriaLabel', { description: e.description })}
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -117,7 +127,7 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-display font-semibold text-foreground">
-          Expenses ({expenses.length})
+          {t('expensesHeading', { count: expenses.length })}
         </h2>
         <div className="flex gap-1">
           <Button
@@ -125,22 +135,22 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
             size="sm"
             onClick={() => setViewMode('date')}
             className="gap-1"
-            aria-label="View expenses by date"
+            aria-label={t('viewByDateAriaLabel')}
             aria-pressed={viewMode === 'date'}
           >
             <Calendar className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">By Date</span>
+            <span className="hidden sm:inline">{t('byDate')}</span>
           </Button>
           <Button
             variant={viewMode === 'list' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
             className="gap-1"
-            aria-label="View expenses as list"
+            aria-label={t('viewAsListAriaLabel')}
             aria-pressed={viewMode === 'list'}
           >
             <List className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">List</span>
+            <span className="hidden sm:inline">{t('list')}</span>
           </Button>
         </div>
       </div>
@@ -150,7 +160,7 @@ export default function ExpenseList({ expenses, members, onRemove, onUpdate }: P
           <TabsList className="w-full flex-wrap h-auto gap-1">
             {grouped.map(([date, items]) => (
               <TabsTrigger key={date} value={date} className="text-xs">
-                {format(parseISO(date), 'MMM d')} ({items.length})
+                {format(parseISO(date), 'MMM d', { locale: dateLocale })} ({items.length})
               </TabsTrigger>
             ))}
           </TabsList>
