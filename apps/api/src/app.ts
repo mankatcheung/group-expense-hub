@@ -22,10 +22,6 @@ const isDev = process.env.NODE_ENV !== 'production';
  * instead of listen().
  */
 export async function buildApp(): Promise<FastifyInstance> {
-  // Must finish before any request can be served, so /api/check-email never
-  // sees a filter that's missing existing users.
-  await seedEmailBloomFilter(prisma);
-
   const fastify = Fastify({
     logger: isDev
       ? {
@@ -106,6 +102,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   fastify.decorate('rateLimit', rateLimit);
 
   fastify.get('/health', async () => ({ status: 'ok' }));
+
+  // Best-effort: a failure here (e.g. the DB not being reachable yet during
+  // startup) should never take down the whole server for what's just a
+  // non-critical UX optimization - /api/check-email's route handler already
+  // falls back to a real DB query whenever the filter hasn't seen an email.
+  try {
+    await seedEmailBloomFilter(prisma);
+  } catch (error) {
+    fastify.log.warn({ err: error }, 'Failed to seed email bloom filter, continuing without it');
+  }
 
   await fastify.register(async function (fastify) {
     fastify.all('/api/auth/*', async (request, reply) => {
