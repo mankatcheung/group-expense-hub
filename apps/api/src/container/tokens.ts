@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { ICache } from '../application/ports/cache.js';
 import type { ITripRepository } from '../application/ports/repositories/trip.repository.js';
 import type { IExpenseRepository } from '../application/ports/repositories/expense.repository.js';
 import type { IMemberRepository } from '../application/ports/repositories/member.repository.js';
@@ -32,6 +33,8 @@ import type { CheckEmailUseCase } from '../application/use-cases/check-email/che
 
 export type AppRegistry = {
   PRISMA_CLIENT: PrismaClient;
+  CACHE: ICache;
+  PRISMA_TRIP_REPOSITORY: ITripRepository;
   TRIP_REPOSITORY: ITripRepository;
   EXPENSE_REPOSITORY: IExpenseRepository;
   MEMBER_REPOSITORY: IMemberRepository;

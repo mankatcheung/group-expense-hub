@@ -14,6 +14,8 @@ import { createInMemoryRateLimitService } from '../../infrastructure/services/in
 import { createPrismaTripAccessService } from '../../infrastructure/services/prisma-trip-access.service.js';
 import { createBloomFilterService } from '../../infrastructure/services/bloom-filter.service.js';
 import { createPrismaTransactionManager } from '../../infrastructure/prisma-transaction-manager.js';
+import { createInMemoryCache } from '../../infrastructure/in-memory-cache.js';
+import { createCachingTripRepository } from '../../infrastructure/repositories/caching-trip.repository.js';
 
 const WINDOW_MS = 60_000;
 const authMax = process.env.AUTH_RATE_LIMIT_MAX ? parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) : 20;
@@ -22,8 +24,10 @@ export function createInfrastructureModule() {
   const mod = createModule<AppRegistry>();
 
   mod.bind('PRISMA_CLIENT').toValue(prisma);
+  mod.bind('CACHE').toValue(createInMemoryCache());
 
-  mod.bind('TRIP_REPOSITORY').toHigherOrderFunction(createPrismaTripRepository, { prisma: 'PRISMA_CLIENT' });
+  mod.bind('PRISMA_TRIP_REPOSITORY').toHigherOrderFunction(createPrismaTripRepository, { prisma: 'PRISMA_CLIENT' });
+  mod.bind('TRIP_REPOSITORY').toHigherOrderFunction(createCachingTripRepository, { repository: 'PRISMA_TRIP_REPOSITORY', cache: 'CACHE' });
   mod.bind('EXPENSE_REPOSITORY').toHigherOrderFunction(createPrismaExpenseRepository, { prisma: 'PRISMA_CLIENT' });
   mod.bind('MEMBER_REPOSITORY').toHigherOrderFunction(createPrismaMemberRepository, { prisma: 'PRISMA_CLIENT' });
   mod.bind('INVITATION_REPOSITORY').toHigherOrderFunction(createPrismaInvitationRepository, { prisma: 'PRISMA_CLIENT' });
