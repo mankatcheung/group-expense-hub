@@ -17,6 +17,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@evyweb/ioctopus':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@fastify/cookie':
         specifier: ^9.3.1
         version: 9.4.0
@@ -1086,6 +1089,9 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@evyweb/ioctopus@1.4.1':
+    resolution: {integrity: sha512-0hlCf9AwICiHIoh4hKxluanrRb6Q430PBwEBoVYkN251639qbm+uQ/W5XjBI4oKhL9AuTy6Dp/AxeyCwe/hDtg==}
 
   '@fastify/ajv-compiler@3.6.0':
     resolution: {integrity: sha512-LwdXQJjmMD+GwLOkP7TVC68qa+pSSogeWWmznRJ/coyTcfe9qA05AHFSe1eZFwK6q+xVRpChnvFUkf1iYaSZsQ==}
@@ -6987,6 +6993,8 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@evyweb/ioctopus@1.4.1': {}
 
   '@fastify/ajv-compiler@3.6.0':
     dependencies:

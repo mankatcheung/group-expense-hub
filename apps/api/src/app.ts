@@ -3,24 +3,19 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
 import { auth, prisma } from './auth.js';
-import tripsRouter from './routes/trips.js';
-import membersRouter from './routes/members.js';
-import expensesRouter from './routes/expenses.js';
-import invitationsRouter from './routes/invitations.js';
-import userRouter from './routes/user.js';
-import checkEmailRouter from './routes/check-email.js';
-import { rateLimit } from './plugins/ratelimit.js';
+import { createAppContainer } from './container/container.js';
+import { createRequireAuth } from './presentation/middleware/require-auth.js';
+import { createTripsPlugin } from './presentation/routes/trips.routes.js';
+import { createMembersPlugin } from './presentation/routes/members.routes.js';
+import { createExpensesPlugin } from './presentation/routes/expenses.routes.js';
+import { createInvitationsPlugin } from './presentation/routes/invitations.routes.js';
+import { createUserPlugin } from './presentation/routes/user.routes.js';
+import { createCheckEmailPlugin } from './presentation/routes/check-email.routes.js';
 import { seedEmailBloomFilter } from './plugins/email-bloom-filter.js';
 import { getTrustedOrigins } from './lib/trusted-origins.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-/**
- * Builds and fully configures the Fastify instance (plugins, hooks, routes)
- * without binding to a network port. Used by the real server entrypoint
- * (index.ts) and by e2e tests, which exercise the real app via inject()
- * instead of listen().
- */
 export async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: isDev
@@ -34,9 +29,7 @@ export async function buildApp(): Promise<FastifyInstance> {
               ignore: 'pid,hostname',
               levelFirst: true,
               customColors: 'info:blue,warn:yellow,error:red',
-              formatOpts: {
-                colorize: true,
-              },
+              formatOpts: { colorize: true },
             },
           },
         }
@@ -45,52 +38,26 @@ export async function buildApp(): Promise<FastifyInstance> {
     genReqId: () => Math.random().toString(36).substring(2, 15),
   });
 
-  fastify.addHook('onRequest', async (request, _reply) => {
-    request.log.info(
-      {
-        url: request.url,
-        method: request.method,
-        origin: request.headers.origin,
-        referer: request.headers.referer,
-      },
-      'Incoming request'
-    );
+  fastify.addHook('onRequest', async (request) => {
+    request.log.info({ url: request.url, method: request.method, origin: request.headers.origin, referer: request.headers.referer }, 'Incoming request');
   });
 
   fastify.addHook('onResponse', async (request, reply) => {
-    request.log.info(
-      {
-        url: request.url,
-        method: request.method,
-        statusCode: reply.statusCode,
-        responseTime: reply.elapsedTime + 'ms',
-      },
-      'Request completed'
-    );
+    request.log.info({ url: request.url, method: request.method, statusCode: reply.statusCode, responseTime: reply.elapsedTime + 'ms' }, 'Request completed');
   });
 
   fastify.setErrorHandler(async (error, request, reply) => {
     request.log.error({ err: error, url: request.url, method: request.method }, 'Request error');
-
     const statusCode = (error as any).statusCode || (error as any).status || 500;
     const message = statusCode >= 500 ? 'Internal Server Error' : error.message;
-
-    reply.status(statusCode).send({
-      error: message,
-      statusCode,
-      ...(isDev && { stack: error.stack }),
-    });
+    reply.status(statusCode).send({ error: message, statusCode, ...(isDev && { stack: error.stack }) });
   });
 
-  await fastify.register(helmet, {
-    contentSecurityPolicy: false,
-  });
+  await fastify.register(helmet, { contentSecurityPolicy: false });
 
   const trustedOrigins = getTrustedOrigins();
-
   await fastify.register(cors, {
     origin: (origin, callback) => {
-      // Allow non-browser/same-origin requests (no Origin header).
       if (!origin) return callback(null, true);
       callback(null, trustedOrigins.includes(origin));
     },
@@ -99,86 +66,101 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await fastify.register(cookie);
 
-  fastify.decorate('rateLimit', rateLimit);
-
   fastify.get('/health', async () => ({ status: 'ok' }));
 
-  // Best-effort: a failure here (e.g. the DB not being reachable yet during
-  // startup) should never take down the whole server for what's just a
-  // non-critical UX optimization - /api/check-email's route handler already
-  // falls back to a real DB query whenever the filter hasn't seen an email.
+  const container = createAppContainer();
+
+  // Seed bloom filter (best-effort — non-critical, falls back to DB query on miss)
   try {
     await seedEmailBloomFilter(prisma);
   } catch (error) {
     fastify.log.warn({ err: error }, 'Failed to seed email bloom filter, continuing without it');
   }
 
-  await fastify.register(async function (fastify) {
+  // Auth passthrough — rate-limited and forwarded to better-auth handler
+  const authRateLimiter = container.get('AUTH_RATE_LIMITER');
+  await fastify.register(async (fastify) => {
     fastify.all('/api/auth/*', async (request, reply) => {
-      const rateLimitResult = await rateLimit.auth.limit(request.ip);
-      if (!rateLimitResult.success) {
-        // better-auth's client reads `message` (matching its own APIError
-        // shape), not `error` - the latter is only correctly read by our own
-        // fetchApi wrapper, which doesn't handle this auth-forwarder route.
-        return reply.status(429).send({
-          message: 'Too many requests. Please try again later.',
-          code: 'TOO_MANY_REQUESTS',
-        });
+      const rl = await authRateLimiter.limit(request.ip);
+      if (!rl.success) {
+        return reply.status(429).send({ message: 'Too many requests. Please try again later.', code: 'TOO_MANY_REQUESTS' });
       }
 
       const path = request.url.replace('/api/auth', '');
       const method = request.method.toUpperCase();
-
       const headers: Record<string, string> = {};
-      if (request.headers.cookie) {
-        headers.cookie = request.headers.cookie;
-      }
-      if (request.headers['content-type']) {
-        headers['content-type'] = request.headers['content-type'];
-      }
-      // better-auth's own origin-check middleware only runs when the request
-      // carries a cookie (e.g. sign-out, where a session already exists) and
-      // requires this header to be present and trusted - without forwarding
-      // it, authenticated actions like sign-out fail with 403 MISSING_OR_NULL_ORIGIN.
-      if (request.headers.origin) {
-        headers.origin = request.headers.origin;
-      }
+      if (request.headers.cookie) headers.cookie = request.headers.cookie;
+      if (request.headers['content-type']) headers['content-type'] = request.headers['content-type'];
+      if (request.headers.origin) headers.origin = request.headers.origin;
 
       const authRequest = new Request(
         `${process.env.BETTER_AUTH_URL || 'http://localhost:4040'}/api/auth${path}`,
-        {
-          method,
-          headers,
-          body: method !== 'GET' && method !== 'HEAD' ? JSON.stringify(request.body) : undefined,
-          credentials: 'include',
-        }
+        { method, headers, body: method !== 'GET' && method !== 'HEAD' ? JSON.stringify(request.body) : undefined, credentials: 'include' }
       );
 
       const response = await auth.handler(authRequest);
-
       reply.status(response.status);
-
       const setCookie = response.headers.get('set-cookie');
-      if (setCookie) {
-        reply.header('set-cookie', setCookie);
-      }
-
+      if (setCookie) reply.header('set-cookie', setCookie);
       const contentType = response.headers.get('content-type');
-      if (contentType) {
-        reply.header('content-type', contentType);
-      }
-
+      if (contentType) reply.header('content-type', contentType);
       const body = await response.text();
       return body ? JSON.parse(body) : {};
     });
   });
 
-  await fastify.register(tripsRouter, { prefix: '/api/trips' });
-  await fastify.register(membersRouter, { prefix: '/api/trips' });
-  await fastify.register(expensesRouter, { prefix: '/api/trips' });
-  await fastify.register(invitationsRouter, { prefix: '/api/invitations' });
-  await fastify.register(userRouter, { prefix: '/api/user' });
-  await fastify.register(checkEmailRouter, { prefix: '/api' });
+  const requireAuth = createRequireAuth(container.get('AUTH_SERVICE'));
+  const apiRateLimiter = container.get('API_RATE_LIMITER');
+  const emailRateLimiter = container.get('EMAIL_RATE_LIMITER');
+
+  await fastify.register(createTripsPlugin({
+    requireAuth,
+    getTrips: container.get('GET_TRIPS_USE_CASE'),
+    createTrip: container.get('CREATE_TRIP_USE_CASE'),
+    getTrip: container.get('GET_TRIP_USE_CASE'),
+    updateTrip: container.get('UPDATE_TRIP_USE_CASE'),
+    deleteTrip: container.get('DELETE_TRIP_USE_CASE'),
+    inviteMember: container.get('INVITE_MEMBER_USE_CASE'),
+    joinTrip: container.get('JOIN_TRIP_USE_CASE'),
+    removeCollaborator: container.get('REMOVE_COLLABORATOR_USE_CASE'),
+    apiRateLimiter,
+    authRateLimiter,
+    emailRateLimiter,
+  }), { prefix: '/api/trips' });
+
+  await fastify.register(createMembersPlugin({
+    requireAuth,
+    createMember: container.get('CREATE_MEMBER_USE_CASE'),
+    updateMember: container.get('UPDATE_MEMBER_USE_CASE'),
+    deleteMember: container.get('DELETE_MEMBER_USE_CASE'),
+    apiRateLimiter,
+  }), { prefix: '/api/trips' });
+
+  await fastify.register(createExpensesPlugin({
+    requireAuth,
+    createExpense: container.get('CREATE_EXPENSE_USE_CASE'),
+    updateExpense: container.get('UPDATE_EXPENSE_USE_CASE'),
+    deleteExpense: container.get('DELETE_EXPENSE_USE_CASE'),
+    apiRateLimiter,
+  }), { prefix: '/api/trips' });
+
+  await fastify.register(createInvitationsPlugin({
+    requireAuth,
+    getInvitations: container.get('GET_INVITATIONS_USE_CASE'),
+    acceptInvitation: container.get('ACCEPT_INVITATION_USE_CASE'),
+    apiRateLimiter,
+  }), { prefix: '/api/invitations' });
+
+  await fastify.register(createUserPlugin({
+    requireAuth,
+    updateProfile: container.get('UPDATE_PROFILE_USE_CASE'),
+    authRateLimiter,
+  }), { prefix: '/api/user' });
+
+  await fastify.register(createCheckEmailPlugin({
+    checkEmail: container.get('CHECK_EMAIL_USE_CASE'),
+    apiRateLimiter,
+  }), { prefix: '/api' });
 
   return fastify;
 }
