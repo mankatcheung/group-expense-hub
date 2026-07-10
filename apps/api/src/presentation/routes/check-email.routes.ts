@@ -4,12 +4,12 @@ import { parseBody } from '../../lib/validate-request.js';
 import type { CheckEmailUseCase } from '../../application/use-cases/check-email/check-email.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type CheckEmailPluginDeps = {
   checkEmail: CheckEmailUseCase;
   apiRateLimiter: IRateLimitService;
 };
 
-export function createCheckEmailPlugin(deps: Deps): FastifyPluginAsync {
+export function createCheckEmailPlugin(deps: CheckEmailPluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.get('/check-email', async (request: FastifyRequest, reply: FastifyReply) => {
       const rl = await deps.apiRateLimiter.limit(request.ip);

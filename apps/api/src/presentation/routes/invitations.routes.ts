@@ -3,14 +3,14 @@ import type { GetInvitationsUseCase } from '../../application/use-cases/invitati
 import type { AcceptInvitationUseCase } from '../../application/use-cases/invitations/accept-invitation.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type InvitationPluginDeps = {
   requireAuth: preHandlerHookHandler;
   getInvitations: GetInvitationsUseCase;
   acceptInvitation: AcceptInvitationUseCase;
   apiRateLimiter: IRateLimitService;
 };
 
-export function createInvitationsPlugin(deps: Deps): FastifyPluginAsync {
+export function createInvitationsPlugin(deps: InvitationPluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.get('/', { preHandler: deps.requireAuth }, async (request: FastifyRequest) => {
       const invitations = await deps.getInvitations(request.user.email);

@@ -6,7 +6,7 @@ import type { UpdateExpenseUseCase } from '../../application/use-cases/expenses/
 import type { DeleteExpenseUseCase } from '../../application/use-cases/expenses/delete-expense.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type ExpensePluginDeps = {
   requireAuth: preHandlerHookHandler;
   createExpense: CreateExpenseUseCase;
   updateExpense: UpdateExpenseUseCase;
@@ -14,7 +14,7 @@ type Deps = {
   apiRateLimiter: IRateLimitService;
 };
 
-export function createExpensesPlugin(deps: Deps): FastifyPluginAsync {
+export function createExpensesPlugin(deps: ExpensePluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.post('/:id/expenses', { preHandler: deps.requireAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
       const { id: tripId } = request.params as { id: string };

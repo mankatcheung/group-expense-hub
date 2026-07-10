@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { buildTestApp } from '../../test/test-app.js';
-import { createExpensesPlugin } from './expenses.routes.js';
+import { createExpensesPlugin, type ExpensePluginDeps } from './expenses.routes.js';
 
 const user = { id: 'user-1', name: 'Test User', email: 'test@example.com', image: null };
-const mockRequireAuth = vi.fn(async (request: FastifyRequest) => { (request as any).user = user; });
+const mockRequireAuth = vi.fn(async (request: FastifyRequest) => { (request as any).user = user; }); // eslint-disable-line @typescript-eslint/no-explicit-any
 const validBody = {
   id: '11111111-1111-1111-1111-111111111111',
   description: 'Dinner',
@@ -14,7 +14,7 @@ const validBody = {
   splitAmong: ['22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333'],
 };
 
-function makeDeps(overrides: Record<string, unknown> = {}) {
+function makeDeps(overrides: Partial<ExpensePluginDeps> = {}): ExpensePluginDeps {
   return {
     requireAuth: mockRequireAuth,
     createExpense: vi.fn().mockResolvedValue({ type: 'success' }),
@@ -31,7 +31,7 @@ describe('createExpensesPlugin', () => {
   afterAll(() => app?.close());
 
   describe('POST /:id/expenses', () => {
-    beforeEach(async () => { app = await buildTestApp(createExpensesPlugin(makeDeps() as any), '/api/trips'); });
+    beforeEach(async () => { app = await buildTestApp(createExpensesPlugin(makeDeps()), '/api/trips'); });
 
     it('returns 400 for an invalid body', async () => {
       const res = await app.inject({ method: 'POST', url: '/api/trips/trip-1/expenses', payload: { ...validBody, amount: -5 } });
@@ -39,14 +39,14 @@ describe('createExpensesPlugin', () => {
     });
 
     it('returns 429 when rate limited', async () => {
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ apiRateLimiter: { limit: vi.fn().mockResolvedValue({ success: false, remaining: 0, reset: 0 }) } }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ apiRateLimiter: { limit: vi.fn().mockResolvedValue({ success: false, remaining: 0, reset: 0 }) } })), '/api/trips');
       const res = await localApp.inject({ method: 'POST', url: '/api/trips/trip-1/expenses', payload: validBody });
       expect(res.statusCode).toBe(429);
       await localApp.close();
     });
 
     it('returns 403 when forbidden', async () => {
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ createExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ createExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) })), '/api/trips');
       const res = await localApp.inject({ method: 'POST', url: '/api/trips/trip-1/expenses', payload: validBody });
       expect(res.statusCode).toBe(403);
       await localApp.close();
@@ -54,7 +54,7 @@ describe('createExpensesPlugin', () => {
 
     it('creates the expense and returns success', async () => {
       const mockCreate = vi.fn().mockResolvedValue({ type: 'success' });
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ createExpense: mockCreate }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ createExpense: mockCreate })), '/api/trips');
       const res = await localApp.inject({ method: 'POST', url: '/api/trips/trip-1/expenses', payload: validBody });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ success: true });
@@ -65,20 +65,21 @@ describe('createExpensesPlugin', () => {
 
   describe('PUT /:id/expenses/:expenseId', () => {
     it('returns 403 when forbidden', async () => {
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ updateExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ updateExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) })), '/api/trips');
       const res = await localApp.inject({ method: 'PUT', url: '/api/trips/trip-1/expenses/expense-1', payload: validBody });
       expect(res.statusCode).toBe(403);
       await localApp.close();
     });
 
     it('returns 404 when not found', async () => {
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ updateExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'not_found' }) }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ updateExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'not_found' }) })), '/api/trips');
       const res = await localApp.inject({ method: 'PUT', url: '/api/trips/trip-1/expenses/expense-1', payload: validBody });
       expect(res.statusCode).toBe(404);
       await localApp.close();
     });
 
     it('updates and returns success', async () => {
+      app = await buildTestApp(createExpensesPlugin(makeDeps()), '/api/trips');
       const res = await app.inject({ method: 'PUT', url: '/api/trips/trip-1/expenses/expense-1', payload: validBody });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ success: true });
@@ -87,13 +88,14 @@ describe('createExpensesPlugin', () => {
 
   describe('DELETE /:id/expenses/:expenseId', () => {
     it('returns 403 when forbidden', async () => {
-      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ deleteExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) }) as any), '/api/trips');
+      const localApp = await buildTestApp(createExpensesPlugin(makeDeps({ deleteExpense: vi.fn().mockResolvedValue({ type: 'error', reason: 'forbidden' }) })), '/api/trips');
       const res = await localApp.inject({ method: 'DELETE', url: '/api/trips/trip-1/expenses/expense-1' });
       expect(res.statusCode).toBe(403);
       await localApp.close();
     });
 
     it('deletes and returns success', async () => {
+      app = await buildTestApp(createExpensesPlugin(makeDeps()), '/api/trips');
       const res = await app.inject({ method: 'DELETE', url: '/api/trips/trip-1/expenses/expense-1' });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ success: true });

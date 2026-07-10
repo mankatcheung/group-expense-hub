@@ -6,7 +6,7 @@ import type { UpdateMemberUseCase } from '../../application/use-cases/members/up
 import type { DeleteMemberUseCase } from '../../application/use-cases/members/delete-member.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type MemberPluginDeps = {
   requireAuth: preHandlerHookHandler;
   createMember: CreateMemberUseCase;
   updateMember: UpdateMemberUseCase;
@@ -14,7 +14,7 @@ type Deps = {
   apiRateLimiter: IRateLimitService;
 };
 
-export function createMembersPlugin(deps: Deps): FastifyPluginAsync {
+export function createMembersPlugin(deps: MemberPluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.post('/:id/members', { preHandler: deps.requireAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
       const { id: tripId } = request.params as { id: string };

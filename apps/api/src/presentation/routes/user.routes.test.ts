@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { buildTestApp } from '../../test/test-app.js';
-import { createUserPlugin } from './user.routes.js';
+import { createUserPlugin, type UserPluginDeps } from './user.routes.js';
 
 const user = { id: 'user-1', name: 'Test User', email: 'test@example.com', image: null };
-const mockRequireAuth = vi.fn(async (request: FastifyRequest) => { (request as any).user = user; });
-const authRateLimiter = { limit: vi.fn().mockResolvedValue({ success: true, remaining: 19, reset: 0 }) };
+const mockRequireAuth = vi.fn(async (request: FastifyRequest) => { (request as any).user = user; }); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-function makeDeps(overrides: Record<string, unknown> = {}) {
-  return { requireAuth: mockRequireAuth, updateProfile: vi.fn().mockResolvedValue({ type: 'success' }), authRateLimiter, ...overrides };
+function makeDeps(overrides: Partial<UserPluginDeps> = {}): UserPluginDeps {
+  return {
+    requireAuth: mockRequireAuth,
+    updateProfile: vi.fn().mockResolvedValue({ type: 'success' }),
+    authRateLimiter: { limit: vi.fn().mockResolvedValue({ success: true, remaining: 19, reset: 0 }) },
+    ...overrides,
+  };
 }
 
 describe('createUserPlugin', () => {
@@ -16,7 +20,7 @@ describe('createUserPlugin', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    app = await buildTestApp(createUserPlugin(makeDeps() as any), '/api/user');
+    app = await buildTestApp(createUserPlugin(makeDeps()), '/api/user');
   });
 
   afterAll(() => app?.close());
@@ -28,14 +32,14 @@ describe('createUserPlugin', () => {
     });
 
     it('returns 429 when rate limited', async () => {
-      const localApp = await buildTestApp(createUserPlugin(makeDeps({ authRateLimiter: { limit: vi.fn().mockResolvedValue({ success: false, remaining: 0, reset: 0 }) } }) as any), '/api/user');
+      const localApp = await buildTestApp(createUserPlugin(makeDeps({ authRateLimiter: { limit: vi.fn().mockResolvedValue({ success: false, remaining: 0, reset: 0 }) } })), '/api/user');
       const res = await localApp.inject({ method: 'PUT', url: '/api/user/profile', payload: { name: 'New Name' } });
       expect(res.statusCode).toBe(429);
       await localApp.close();
     });
 
     it('returns 400 when email is already taken', async () => {
-      const localApp = await buildTestApp(createUserPlugin(makeDeps({ updateProfile: vi.fn().mockResolvedValue({ type: 'error', reason: 'email_taken' }) }) as any), '/api/user');
+      const localApp = await buildTestApp(createUserPlugin(makeDeps({ updateProfile: vi.fn().mockResolvedValue({ type: 'error', reason: 'email_taken' }) })), '/api/user');
       const res = await localApp.inject({ method: 'PUT', url: '/api/user/profile', payload: { email: 'taken@example.com' } });
       expect(res.statusCode).toBe(400);
       expect(res.json()).toEqual({ error: 'Email already in use' });
@@ -44,7 +48,7 @@ describe('createUserPlugin', () => {
 
     it('returns 200 on success', async () => {
       const mockUpdate = vi.fn().mockResolvedValue({ type: 'success' });
-      const localApp = await buildTestApp(createUserPlugin(makeDeps({ updateProfile: mockUpdate }) as any), '/api/user');
+      const localApp = await buildTestApp(createUserPlugin(makeDeps({ updateProfile: mockUpdate })), '/api/user');
       const res = await localApp.inject({ method: 'PUT', url: '/api/user/profile', payload: { name: 'New Name' } });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ success: true });

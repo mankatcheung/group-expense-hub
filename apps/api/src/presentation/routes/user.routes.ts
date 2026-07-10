@@ -4,13 +4,13 @@ import { parseBody } from '../../lib/validate-request.js';
 import type { UpdateProfileUseCase } from '../../application/use-cases/users/update-profile.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type UserPluginDeps = {
   requireAuth: preHandlerHookHandler;
   updateProfile: UpdateProfileUseCase;
   authRateLimiter: IRateLimitService;
 };
 
-export function createUserPlugin(deps: Deps): FastifyPluginAsync {
+export function createUserPlugin(deps: UserPluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.put('/profile', { preHandler: deps.requireAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
       const body = parseBody(UpdateProfileRequestSchema, request.body, reply);

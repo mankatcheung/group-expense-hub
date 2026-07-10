@@ -12,7 +12,7 @@ import type { JoinTripUseCase } from '../../application/use-cases/trips/join-tri
 import type { RemoveCollaboratorUseCase } from '../../application/use-cases/trips/remove-collaborator.use-case.js';
 import type { IRateLimitService } from '../../application/ports/services/rate-limit.service.js';
 
-type Deps = {
+export type TripPluginDeps = {
   requireAuth: preHandlerHookHandler;
   getTrips: GetTripsUseCase;
   createTrip: CreateTripUseCase;
@@ -27,7 +27,7 @@ type Deps = {
   emailRateLimiter: IRateLimitService;
 };
 
-export function createTripsPlugin(deps: Deps): FastifyPluginAsync {
+export function createTripsPlugin(deps: TripPluginDeps): FastifyPluginAsync {
   return async (fastify) => {
     fastify.get('/', { preHandler: deps.requireAuth }, async (request: FastifyRequest) => {
       return (await deps.getTrips(request.user.id)).map(t => formatTripSummary(t, request.user.id));
