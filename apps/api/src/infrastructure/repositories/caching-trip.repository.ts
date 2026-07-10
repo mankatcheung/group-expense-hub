@@ -4,6 +4,11 @@ import { CACHE } from '@group-expense-hub/db/constants';
 
 const TTL = CACHE.TRIPS_STALE_TIME;
 
+// findByIdFull is intentionally NOT cached: it embeds members, expenses, and
+// splits, all of which mutate through repositories that have no reference to
+// this cache. Caching it would require propagating cache invalidation into
+// every member/expense use case, which couples infrastructure to the
+// application layer.
 export function createCachingTripRepository({ repository, cache }: { repository: ITripRepository; cache: ICache }): ITripRepository {
   return {
     findSummariesOwnedByUser: (userId) =>
@@ -15,8 +20,7 @@ export function createCachingTripRepository({ repository, cache }: { repository:
       return cache.getOrFetch(key, () => repository.findSummariesByIds(ids), TTL);
     },
 
-    findByIdFull: (id) =>
-      cache.getOrFetch(`trip:full:${id}`, () => repository.findByIdFull(id), TTL),
+    findByIdFull: (id) => repository.findByIdFull(id),
 
     findNameAndOwner: (id) =>
       cache.getOrFetch(`trip:name:${id}`, () => repository.findNameAndOwner(id), TTL),
@@ -29,14 +33,12 @@ export function createCachingTripRepository({ repository, cache }: { repository:
 
     async update(id, data) {
       const result = await repository.update(id, data);
-      cache.delete(`trip:full:${id}`);
       cache.delete(`trip:name:${id}`);
       return result;
     },
 
     async delete(id, userId) {
       await repository.delete(id, userId);
-      cache.delete(`trip:full:${id}`);
       cache.delete(`trip:name:${id}`);
       cache.deleteByPrefix(`trips:user:${userId}`);
     },

@@ -69,9 +69,10 @@ describe('createCachingTripRepository', () => {
   });
 
   describe('findByIdFull', () => {
-    it('calls cache with trip:full:{id} key', async () => {
+    it('delegates directly to repository without caching', async () => {
       await cached.findByIdFull('t1');
-      expect(cache.getOrFetch).toHaveBeenCalledWith('trip:full:t1', expect.any(Function), expect.any(Number));
+      expect(repository.findByIdFull).toHaveBeenCalledWith('t1');
+      expect(cache.getOrFetch).not.toHaveBeenCalledWith('trip:full:t1', expect.any(Function), expect.any(Number));
     });
   });
 
@@ -90,19 +91,19 @@ describe('createCachingTripRepository', () => {
   });
 
   describe('update', () => {
-    it('invalidates trip:full and trip:name after updating', async () => {
+    it('invalidates trip:name after updating', async () => {
       await cached.update('t1', { name: 'New Name' });
-      expect(cache.delete).toHaveBeenCalledWith('trip:full:t1');
       expect(cache.delete).toHaveBeenCalledWith('trip:name:t1');
+      expect(cache.delete).not.toHaveBeenCalledWith('trip:full:t1');
     });
   });
 
   describe('delete', () => {
-    it('invalidates trip:full, trip:name, and owner prefix after deleting', async () => {
+    it('invalidates trip:name and owner prefix after deleting', async () => {
       await cached.delete('t1', 'u1');
-      expect(cache.delete).toHaveBeenCalledWith('trip:full:t1');
       expect(cache.delete).toHaveBeenCalledWith('trip:name:t1');
       expect(cache.deleteByPrefix).toHaveBeenCalledWith('trips:user:u1');
+      expect(cache.delete).not.toHaveBeenCalledWith('trip:full:t1');
     });
   });
 });
