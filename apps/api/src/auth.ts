@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth';
 import { PrismaClient } from '@prisma/client';
 import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
-import { sendPasswordResetEmail } from './services/email.js';
+import { createBrevoEmailService } from './infrastructure/services/brevo-email.service.js';
 import { SESSION } from '@group-expense-hub/db/constants';
 import { getTrustedOrigins } from './lib/trusted-origins.js';
 import { emailBloomFilter } from './plugins/email-bloom-filter.js';
@@ -20,12 +20,12 @@ const prisma = new PrismaClient({ adapter });
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Origin checks must be explicitly opted out via env var rather than inferred
-// from NODE_ENV, so a misconfigured deployment can't silently disable them.
 const disableOriginCheck = process.env.DISABLE_ORIGIN_CHECK === 'true';
 
 const apiUrl =
   process.env.NEXT_PUBLIC_API_URL || process.env.BETTER_AUTH_URL || 'http://localhost:4040';
+
+const emailService = createBrevoEmailService();
 
 // better-auth's inferred return type references internal @better-auth/core
 // paths that aren't portable under pnpm's nested node_modules, which breaks
@@ -43,11 +43,7 @@ export const auth: any = betterAuth({
     enabled: true,
     requireEmailVerification: false,
     async sendResetPassword({ user, url }) {
-      await sendPasswordResetEmail({
-        to: user.email,
-        name: user.name,
-        resetUrl: url,
-      });
+      await emailService.sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl: url });
     },
   },
   session: {
@@ -67,9 +63,6 @@ export const auth: any = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // Keeps the email Bloom filter (used by GET /api/check-email) in
-        // sync with every real signup, regardless of which code path
-        // created the user.
         after: async (user) => {
           emailBloomFilter.add(user.email);
         },
