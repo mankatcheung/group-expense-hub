@@ -164,8 +164,13 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @group-expense-hub/db generate
 
+      # Pinned: unpinned installs silently pick up whatever is newest at CI
+      # run time. vercel@58.x regressed output-file-tracing for pnpm
+      # monorepos on Next 16 + Turbopack (ENOENT lstat on traced
+      # @opentelemetry/api files during `vercel deploy --prebuilt`).
+      # 55.0.0 is the last version confirmed working against this repo.
       - name: Install Vercel CLI
-        run: pnpm install --global vercel
+        run: pnpm install --global vercel@55.0.0
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
