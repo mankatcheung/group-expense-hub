@@ -1,0 +1,196 @@
+name: PR Preview
+
+on:
+  pull_request:
+
+# A new push to the PR should replace the previous preview attempt rather
+# than race it (both jobs touch a resource named after the PR number: the
+# Turso database and the Vercel alias).
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # Provisions a throwaway Turso database per PR and pushes the Prisma
+  # schema to it, as a CI-time check that the schema/migrations in this PR
+  # apply cleanly - independent of and isolated from the production
+  # database. The db only exists for the duration of this job; it is not
+  # wired up to any deployed/reachable service (apps/web has no direct DB
+  # access - see CLAUDE.md - and apps/api isn't deployed for previews).
+  preview-db:
+    runs-on: ubuntu-latest
+    env:
+      TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for schema changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            db:
+              - 'packages/db/**'
+
+      - name: Skip if no changes
+        if: steps.filter.outputs.db == 'false'
+        run: exit 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Turso CLI
+        run: |
+          curl -sSfL https://get.tur.so/install.sh | bash
+          echo "$HOME/.turso" >> "$GITHUB_PATH"
+
+      - name: Create preview database
+        id: turso
+        run: |
+          db_name="geh-pr-${{ github.event.pull_request.number }}"
+          # Defensive: a previous run's cleanup step may not have completed
+          # (e.g. this job got cancelled by the concurrency group above
+          # when a newer commit was pushed mid-run).
+          turso db destroy "$db_name" --yes 2>/dev/null || true
+          turso db create "$db_name" --wait ${TURSO_GROUP:+--group "$TURSO_GROUP"}
+          {
+            echo "db_name=$db_name"
+            echo "db_url=$(turso db show "$db_name" --url)"
+            echo "db_token=$(turso db tokens create "$db_name")"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          # Optional: only needed if the Turso account has more than one
+          # group, in which case `turso db create` can't pick one on its own.
+          TURSO_GROUP: ${{ vars.TURSO_GROUP }}
+
+      - name: Push schema to preview database
+        working-directory: packages/db
+        env:
+          TURSO_DATABASE_URL: ${{ steps.turso.outputs.db_url }}?authToken=${{ steps.turso.outputs.db_token }}
+        run: pnpm exec prisma db push --accept-data-loss
+
+      - name: Destroy preview database
+        if: always() && steps.turso.outputs.db_name != ''
+        run: turso db destroy "${{ steps.turso.outputs.db_name }}" --yes
+
+  # Deploys apps/web to Vercel as a preview build (not production), aliased
+  # to a stable per-PR URL that stays the same across pushes. It points at
+  # the existing production API (same as a normal Vercel Preview
+  # environment already would) rather than anything backed by the
+  # preview-db job above - apps/web has no direct database access, and
+  # apps/api isn't deployed anywhere reachable for previews.
+  preview-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for web changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/db/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'turbo.json'
+
+      - name: Skip if no changes
+        if: steps.filter.outputs.web == 'false'
+        run: exit 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @group-expense-hub/db generate
+
+      # Pinned for the same reason as ci.yml's deploy-web job: an unpinned
+      # install silently tracks whatever Vercel CLI release is newest at
+      # run time, and 58.x is currently broken for this repo (see #35).
+      - name: Install Vercel CLI
+        run: pnpm install --global vercel@55.0.0
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      # NEXT_PUBLIC_APP_URL has to be correct *at build time* - it's read
+      # server-side (not just client-side) by the cookie-domain rewrite in
+      # apps/web/app/api/[...path]/route.ts, so auth cookies land on the
+      # right host. The alias below is what makes this URL correct even
+      # though it's chosen before the deployment (which gets a random
+      # *.vercel.app URL) exists yet.
+      - name: Set preview app URL for build
+        run: |
+          echo "NEXT_PUBLIC_APP_URL=https://${{ env.PREVIEW_ALIAS }}" >> .vercel/.env.preview.local
+        env:
+          PREVIEW_ALIAS: group-expense-hub-pr-${{ github.event.pull_request.number }}.vercel.app
+
+      - name: Build Vercel (preview)
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel (preview)
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Alias preview deployment
+        env:
+          PREVIEW_ALIAS: group-expense-hub-pr-${{ github.event.pull_request.number }}.vercel.app
+        run: vercel alias set "${{ steps.deploy.outputs.url }}" "$PREVIEW_ALIAS" --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Comment preview URL on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_ALIAS: group-expense-hub-pr-${{ github.event.pull_request.number }}.vercel.app
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          marker="<!-- pr-preview-comment -->"
+          body="$marker
+          🔗 **Preview:** https://${PREVIEW_ALIAS}
+
+          This link stays the same across pushes to this PR. It points at
+          the production API (apps/web has no direct database access), so
+          it's safe to use real-looking data but writes go through the
+          real backend - avoid anything you wouldn't want in production.
+
+          Built from ${{ github.sha }}"
+
+          existing_id=$(gh pr view "$PR_NUMBER" --json comments \
+            --jq ".comments[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+
+          if [ -n "$existing_id" ]; then
+            gh api "repos/${{ github.repository }}/issues/comments/$existing_id" -X PATCH -f body="$body"
+          else
+            gh pr comment "$PR_NUMBER" --body "$body"
+          fi
