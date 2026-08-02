@@ -11,11 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Plane, Settings, Sun, Moon, User, Loader2, Languages } from 'lucide-react';
+import { LogOut, Settings, Sun, Moon, User, Loader2, Languages } from 'lucide-react';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTheme } from 'next-themes';
 import { handleApiError } from '@/lib/error-handler';
 import { useNavigationProgress } from '@/context/NavigationProgressContext';
+import { LogoMark } from '@/components/Logo';
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -64,9 +65,7 @@ export default function Header({ showBackButton, onBack }: HeaderProps) {
             </Button>
           )}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Plane className="h-4 w-4" />
-            </div>
+            <LogoMark className="h-8 w-8 shrink-0" />
             <span className="font-semibold text-sm">{t('hello', { name: user?.name ?? '' })}</span>
           </div>
         </div>

@@ -10,6 +10,13 @@ import '@/index.css';
 export const metadata: Metadata = {
   title: 'Group Expense Hub',
   description: 'Split expenses with friends and track who owes what',
+  icons: {
+    icon: [
+      { url: '/icon-192.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '48x48' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
