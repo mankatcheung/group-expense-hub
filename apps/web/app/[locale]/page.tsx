@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Header from '@/components/Header';
+import { LogoMark } from '@/components/Logo';
 import { TripCardSkeleton, InvitationSkeleton } from '@/components/Skeletons';
 import {
   Plus,
@@ -21,7 +22,6 @@ import {
   Mail,
   Check,
   Loader2,
-  Plane,
   AlertCircle,
 } from 'lucide-react';
 import { getCurrencySymbol } from '@/lib/currencies';
@@ -67,9 +67,7 @@ function IndexContent() {
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
-            <Plane className="h-7 w-7" />
-          </div>
+          <LogoMark className="h-14 w-14 mx-auto mb-4" />
           <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground tracking-tight">
             SplitTrip
           </h1>
