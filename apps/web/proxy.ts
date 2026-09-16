@@ -13,8 +13,9 @@ export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   // Note: this middleware's matcher excludes /api/* — origin validation for
-  // those routes lives in apps/web/app/api/[...path]/route.ts instead, since
-  // that's the code path that actually runs for API requests.
+  // those routes lives in withApiRoute (src/server/http/route-helpers.ts) and
+  // the auth route instead. This file runs on the edge runtime, so it must
+  // never import from src/server (Prisma/libSQL are Node-only).
   const isFormSubmission =
     request.method === 'POST' ||
     request.method === 'PUT' ||
