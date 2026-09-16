@@ -17,9 +17,8 @@ export async function removeTestDbFiles(): Promise<void> {
 /**
  * Provisions a throwaway SQLite database for the web e2e suite: a fresh
  * schema pushed via the real migration history (not a `db push` snapshot),
- * isolated from the developer's local dev.db, the production Turso
- * database, and apps/api's own e2e test db. Mirrors
- * apps/api/src/test/e2e/setup.ts.
+ * isolated from the developer's local dev.db and the production Turso
+ * database.
  */
 export async function provisionTestDb(): Promise<void> {
   await removeTestDbFiles();

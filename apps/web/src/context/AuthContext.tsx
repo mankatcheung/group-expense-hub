@@ -50,6 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = async () => {
+    // The session is cached in a cookie for up to 5 minutes; reading it past
+    // the cache re-issues that cookie so a profile edit shows immediately.
+    await authClient.getSession({ query: { disableCookieCache: true } });
     await refetch();
   };
 

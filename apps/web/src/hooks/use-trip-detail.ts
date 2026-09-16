@@ -34,40 +34,62 @@ export function useTripDetail(tripId: string) {
     queryClient.invalidateQueries({ queryKey: key });
   }, [queryClient, key]);
 
+  // A trip refetch that starts while a write is in flight (e.g. navigating
+  // back to the trip page) can return pre-write data and overwrite the
+  // optimistic cache entry. Refetching once the last pending write settles
+  // restores server truth; skipping it while other writes are pending avoids
+  // flicker from intermediate states.
+  const writeKey = [...key, 'write'];
+  const settleWrite = () => {
+    if (queryClient.isMutating({ mutationKey: writeKey }) === 1) {
+      queryClient.invalidateQueries({ queryKey: key });
+    }
+  };
+  const writeOptions = { mutationKey: writeKey, onSettled: settleWrite };
+
   const updateTripMutation = useMutation({
+    ...writeOptions,
     mutationFn: (name: string) => api.updateTrip(tripId, { name }),
   });
 
   const addMemberMutation = useMutation({
+    ...writeOptions,
     mutationFn: (member: Member) => api.addMember(tripId, member),
   });
 
   const updateMemberMutation = useMutation({
+    ...writeOptions,
     mutationFn: ({ memberId, name }: { memberId: string; name: string }) =>
       api.updateMember(tripId, memberId, { name }),
   });
 
   const removeMemberMutation = useMutation({
+    ...writeOptions,
     mutationFn: ({ memberId, force }: { memberId: string; force?: boolean }) =>
       api.removeMember(tripId, memberId, force),
   });
 
   const addExpenseMutation = useMutation({
+    ...writeOptions,
     mutationFn: (expense: Expense) => api.addExpense(tripId, expense),
   });
 
   const updateExpenseMutation = useMutation({
+    ...writeOptions,
     mutationFn: (expense: Expense) => api.updateExpense(tripId, expense),
   });
 
   const removeExpenseMutation = useMutation({
+    ...writeOptions,
     mutationFn: (expenseId: string) => api.removeExpense(tripId, expenseId),
   });
 
   // Invite-member is a rarer action, and its response doesn't include the
   // new TripMember id needed to patch the cache precisely, so a full resync
-  // on success is an acceptable tradeoff here.
+  // on success is an acceptable tradeoff here. It shares the write key so a
+  // pending invite defers other writes' settle refetch, but resyncs itself.
   const inviteMemberMutation = useMutation({
+    mutationKey: writeKey,
     mutationFn: (email: string) => api.inviteMember(tripId, email),
     onSuccess: () => {
       resync();
@@ -76,6 +98,7 @@ export function useTripDetail(tripId: string) {
   });
 
   const removeCollaboratorMutation = useMutation({
+    ...writeOptions,
     mutationFn: (memberId: string) => api.removeCollaborator(tripId, memberId),
   });
 

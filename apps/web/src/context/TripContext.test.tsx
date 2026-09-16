@@ -379,6 +379,7 @@ describe('useTripDetail', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     vi.mocked(api.updateTrip).mockResolvedValue(trip);
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, name: 'New Name' });
 
     act(() => {
       result.current.updateTrip('  ');
@@ -391,6 +392,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.name).toBe('New Name'));
     expect(api.updateTrip).toHaveBeenCalledWith('trip-1', { name: 'New Name' });
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.name).toBe('New Name');
   });
 
   it('resyncs and reports an error when renaming the trip fails', async () => {
@@ -416,6 +419,7 @@ describe('useTripDetail', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     vi.mocked(api.updateMember).mockResolvedValue({ id: 'm-1', name: 'Alicia', color: '#EF4444' });
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, members: [{ id: 'm-1', name: 'Alicia', color: '#EF4444' }] });
 
     act(() => {
       result.current.updateMember('m-1', 'Alicia');
@@ -423,6 +427,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.members[0]).toMatchObject({ name: 'Alicia' }));
     expect(api.updateMember).toHaveBeenCalledWith('trip-1', 'm-1', { name: 'Alicia' });
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.members[0]).toMatchObject({ name: 'Alicia' });
   });
 
   it('resyncs and reports an error when updating a member fails', async () => {
@@ -457,6 +463,7 @@ describe('useTripDetail', () => {
       date: new Date().toISOString(),
     };
     vi.mocked(api.addExpense).mockResolvedValue({ success: true });
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, expenses: [expense] });
 
     act(() => {
       result.current.addExpense(expense);
@@ -464,6 +471,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.expenses).toEqual([expense]));
     expect(api.addExpense).toHaveBeenCalledWith('trip-1', expense);
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.expenses).toEqual([expense]);
   });
 
   it('rolls back an optimistic expense add when the mutation fails', async () => {
@@ -506,6 +515,7 @@ describe('useTripDetail', () => {
 
     const updated = { ...original, description: 'Lunch', amount: 30 };
     vi.mocked(api.updateExpense).mockResolvedValue({ success: true });
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, expenses: [updated] });
 
     act(() => {
       result.current.updateExpense(updated);
@@ -513,6 +523,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.expenses).toEqual([updated]));
     expect(api.updateExpense).toHaveBeenCalledWith('trip-1', updated);
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.expenses).toEqual([updated]);
   });
 
   it('resyncs and reports an error when updating an expense fails', async () => {
@@ -556,6 +568,7 @@ describe('useTripDetail', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     vi.mocked(api.removeExpense).mockResolvedValue({ success: true });
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, expenses: [] });
 
     act(() => {
       result.current.removeExpense('e-1');
@@ -563,6 +576,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.expenses).toEqual([]));
     expect(api.removeExpense).toHaveBeenCalledWith('trip-1', 'e-1');
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.expenses).toEqual([]);
   });
 
   it('resyncs and reports an error when removing an expense fails', async () => {
@@ -623,6 +638,7 @@ describe('useTripDetail', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     vi.mocked(api.removeCollaborator).mockResolvedValue({ success: true });
+    vi.mocked(api.getTrip).mockResolvedValue({ ...trip, tripMembers: [] });
 
     act(() => {
       result.current.removeCollaborator('tm-1');
@@ -630,6 +646,8 @@ describe('useTripDetail', () => {
 
     await waitFor(() => expect(result.current.trip?.tripMembers).toEqual([]));
     expect(api.removeCollaborator).toHaveBeenCalledWith('trip-1', 'tm-1');
+    await waitFor(() => expect(api.getTrip).toHaveBeenCalledTimes(2));
+    expect(result.current.trip?.tripMembers).toEqual([]);
   });
 
   it('resyncs and reports an error when removing a collaborator fails', async () => {

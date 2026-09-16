@@ -1,17 +1,14 @@
 import { createAuthClient } from 'better-auth/react';
 
-const isDev = process.env.NODE_ENV === 'development';
-
-const getBaseURL = () => {
-  if (isDev) return 'http://localhost:4040';
-
-  if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4040';
-  }
-
-  return window.location.origin + '/api/auth';
-};
+// Auth is served same-origin by app/api/auth/[...all]/route.ts. On the
+// server (SSR of client components) there's no window, so fall back to the
+// configured app URL.
+const getBaseURL = () =>
+  typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export const authClient = createAuthClient({
   baseURL: getBaseURL(),
+  basePath: '/api/auth',
 });

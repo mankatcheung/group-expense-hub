@@ -5,10 +5,29 @@ import path from 'path';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+// Helmet's default security headers (without CSP), applied to API responses only.
+const apiSecurityHeaders = [
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+  { key: 'Origin-Agent-Cluster', value: '?1' },
+  { key: 'Referrer-Policy', value: 'no-referrer' },
+  { key: 'Strict-Transport-Security', value: 'max-age=15552000; includeSubDomains' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-DNS-Prefetch-Control', value: 'off' },
+  { key: 'X-Download-Options', value: 'noopen' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+  { key: 'X-XSS-Protection', value: '0' },
+];
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname, '../..'),
   turbopack: {
     root: path.resolve(__dirname, '../..'),
+  },
+  serverExternalPackages: ['@prisma/client', '@prisma/adapter-libsql', '@libsql/client'],
+  async headers() {
+    return [{ source: '/api/:path*', headers: apiSecurityHeaders }];
   },
 };
 

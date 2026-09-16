@@ -30,7 +30,7 @@ A modern web application for splitting group travel expenses with friends. No mo
 
 ### Backend
 
-- **Next.js API Routes / Server Actions** - Backend API
+- **Next.js Route Handlers** - API under `apps/web/app/api`, with business logic in `apps/web/src/server`
 - **Better-Auth** - Authentication framework
 - **Prisma** - ORM with Prisma Client
 - **Turso (libSQL)** - SQLite-compatible database
@@ -38,10 +38,10 @@ A modern web application for splitting group travel expenses with friends. No mo
 
 ### Development
 
-- **Vite** - Build tool (test runner)
-- **Vitest** - Testing framework
+- **pnpm + Turborepo** - Monorepo tooling
+- **Vitest** - Unit and integration tests
+- **Playwright** - End-to-end tests
 - **ESLint** - Code linting
-- **PostCSS** - CSS processing
 - **Prisma CLI** - Database migrations and code generation
 
 ## Getting Started
@@ -61,8 +61,11 @@ cd group-expense-hub
 # Install dependencies
 pnpm install
 
-# Generate Prisma client
-pnpm prisma generate
+# Configure the web app (fill in the values; see comments in the file)
+cp apps/web/.env.example apps/web/.env.local
+
+# Generate the Prisma client
+pnpm db:generate
 
 # Start the development server
 pnpm dev
@@ -72,68 +75,63 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Database Setup
 
-The project uses a SQLite database by default for local development. To set up the database:
+Local development can use a SQLite file (`TURSO_DATABASE_URL=file:./dev.db`, which the app resolves inside `apps/web`) or a Turso database. The schema and migrations live in `packages/db/prisma`:
 
 ```bash
-# Push Prisma schema to database
-pnpm prisma db push
+# Apply the migration history to the app's local SQLite file. Use an absolute
+# path: Prisma resolves relative file: URLs from packages/db, not apps/web.
+TURSO_DATABASE_URL="file:$PWD/apps/web/dev.db" pnpm --filter @group-expense-hub/db migrate:deploy
 
-# Or create a migration
-pnpm prisma migrate dev
+# Create a new migration after editing schema.prisma
+pnpm --filter @group-expense-hub/db migrate
 ```
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+All variables are documented in [`apps/web/.env.example`](apps/web/.env.example). The minimum for local development:
 
 ```env
-# Database (Turso/libSQL)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 TURSO_DATABASE_URL=file:./dev.db
-TURSO_AUTH_TOKEN=
-
-# Better Auth
-BETTER_AUTH_SECRET=your-secret-key-here
+BETTER_AUTH_SECRET=a-random-string-of-at-least-32-characters
 ```
+
+In production these are set in the Vercel project; the server refuses to start if a required value is missing.
 
 ## Project Structure
 
 ```
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   │   └── auth/         # Better Auth endpoints
-│   ├── login/            # Login page
-│   ├── register/         # Registration page
-│   ├── forgot-password/  # Password reset
-│   ├── trip/             # Trip pages
-│   │   └── [tripId]/    # Dynamic trip routes
-│   └── page.tsx          # Home page
-├── src/
-│   ├── components/       # React components
-│   │   └── ui/           # shadcn/ui components
-│   ├── context/          # React contexts
-│   │   ├── AuthContext.tsx
-│   │   └── TripContext.tsx
-│   ├── lib/              # Utilities
-│   │   ├── auth.ts       # Better Auth config
-│   │   ├── auth-client.ts
-│   │   ├── balances.ts
-│   │   ├── currencies.ts
-│   │   ├── server/       # Server actions
-│   │   └── types.ts
-│   └── services/         # API client
-├── prisma/
-│   └── schema.prisma     # Database schema
-└── public/               # Static assets
+├── apps/
+│   ├── web/                  # Next.js app: UI and API
+│   │   ├── app/
+│   │   │   ├── [locale]/     # Pages (login, register, trips, settings, ...)
+│   │   │   └── api/          # Route handlers (auth, trips, members, expenses, invitations, user)
+│   │   ├── src/
+│   │   │   ├── components/   # React components (shadcn/ui in components/ui)
+│   │   │   ├── context/      # AuthContext, TripContext
+│   │   │   ├── hooks/        # Data hooks (e.g. use-trip-detail)
+│   │   │   ├── lib/          # Client utilities, auth client
+│   │   │   ├── services/     # API client used by the UI
+│   │   │   └── server/       # Server-only code: domain, use cases, Prisma repositories, auth, DI container
+│   │   └── e2e/              # Playwright tests
+│   └── mobile/               # Expo app (early scaffold)
+└── packages/
+    └── db/                   # Prisma schema and migrations, Zod schemas, shared types and balance logic
 ```
 
 ## Scripts
 
 ```bash
-pnpm dev       # Start development server
-pnpm build    # Build for production
-pnpm start    # Start production server
-pnpm lint     # Run ESLint
-pnpm test     # Run tests
+pnpm dev          # Start the development server
+pnpm build        # Build for production
+pnpm start        # Start the production server
+pnpm lint         # Run ESLint
+pnpm typecheck    # Type-check
+pnpm test         # Run unit and integration tests
+pnpm db:generate  # Regenerate the Prisma client
+
+# In apps/web
+pnpm test:e2e     # Run Playwright end-to-end tests
 ```
 
 ## License
